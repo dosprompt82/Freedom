@@ -9,6 +9,11 @@ import { useStore } from './store';
 export function useHydrated(): boolean {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
+    // Without usable storage (e.g. blocked site data) persist is not attached.
+    if (!useStore.persist) {
+      setHydrated(true);
+      return;
+    }
     const unsub = useStore.persist.onFinishHydration(() => setHydrated(true));
     if (useStore.persist.hasHydrated()) setHydrated(true);
     return unsub;
