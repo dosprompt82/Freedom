@@ -6,6 +6,7 @@ import { useState, type ReactNode } from 'react';
 import { useHydrated } from '@/lib/hooks';
 import { useActivePlan, useStore, type ThemePref } from '@/lib/store';
 import { Logo } from './Logo';
+import { PlanAssistant } from './PlanAssistant';
 import { ButtonLink, Segmented, cx } from './ui';
 
 const NAV = [
@@ -131,6 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           children
         )}
       </main>
+      {hydrated && plan && <PlanAssistant inputs={plan.inputs} planId={plan.id} />}
     </div>
   );
 }
