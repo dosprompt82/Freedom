@@ -147,3 +147,40 @@ export function workPhaseWindows(inputs: PlanInputs) {
     })
     .filter((w) => w.end > w.start);
 }
+
+export interface PhaseSummary {
+  phaseId: string;
+  label: string;
+  start: number;
+  end: number;
+  coversSpending: boolean;
+  /** Average after-tax work income per year during the phase, today's dollars. */
+  avgIncomeReal: number;
+  /** Highest single-year income needed (today's dollars), e.g. when housing costs end. */
+  maxIncomeReal: number;
+  /** Portfolio on entering and leaving the phase, today's dollars. */
+  portfolioStartReal: number | null;
+  portfolioEndReal: number | null;
+  withdrawalsReal: number;
+}
+
+/** What each post-career work phase earns and does to the portfolio, from the projection. */
+export function phaseSummaries(projection: Projection): PhaseSummary[] {
+  const { inputs } = projection;
+  return workPhaseWindows(inputs).map((w) => {
+    const rows = projection.years.filter((y) => y.age >= w.start && y.age < w.end);
+    const incomes = rows.map((y) => y.workIncome / y.priceStart);
+    return {
+      phaseId: w.phase.id,
+      label: w.phase.label,
+      start: w.start,
+      end: w.end,
+      coversSpending: w.phase.coversSpending,
+      avgIncomeReal: incomes.length ? incomes.reduce((a, b) => a + b, 0) / incomes.length : 0,
+      maxIncomeReal: incomes.length ? Math.max(...incomes) : 0,
+      portfolioStartReal: balanceAtAge(projection, w.start, 'real'),
+      portfolioEndReal: balanceAtAge(projection, Math.min(w.end, inputs.planningHorizonAge + 1), 'real'),
+      withdrawalsReal: rows.reduce((s, y) => s + y.withdrawal / y.priceStart, 0),
+    };
+  });
+}

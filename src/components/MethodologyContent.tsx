@@ -49,7 +49,7 @@ export function MethodologyContent({ compact = false }: { compact?: boolean }) {
 
       <H>Work after full-time employment</H>
       <P>
-        Consulting or part-time phases use after-tax take-home income and apply only after full-time work ends. While you work full-time, your annual savings are already net of income and spending, so earnings are never counted twice. Phase income covers spending first; any surplus is invested at year end.
+        Consulting or part-time phases use after-tax take-home income and apply only after full-time work ends. While you work full-time, your annual savings are already net of income and spending, so earnings are never counted twice. Phase income covers spending first; any surplus is invested at year end. A phase can instead be set to cover all expenses: it is assumed to earn exactly what you spend each year, nothing is withdrawn from the portfolio, and the app shows how much that work needs to bring in.
       </P>
 
       <H>Taxes</H>

@@ -19,7 +19,11 @@ export function assumptionRows(inputs: PlanInputs): { label: string; value: stri
     { label: 'Inflation', value: formatPct(inputs.inflation, 2) },
   ];
   for (const w of workPhaseWindows(inputs)) {
-    rows.push({ label: w.phase.label, value: `Ages ${w.start}–${w.end - 1}`, note: `${formatMoney(w.phase.annualNetIncome)}/yr after tax` });
+    rows.push({
+      label: w.phase.label,
+      value: `Ages ${w.start}–${w.end - 1}`,
+      note: w.phase.coversSpending ? 'Covers all spending; portfolio not touched' : `${formatMoney(w.phase.annualNetIncome)}/yr after tax`,
+    });
   }
   for (const s of inputs.incomeStreams) {
     rows.push({ label: s.label, value: `From age ${s.startAge}`, note: `${formatMoney(s.annualAmount)}/yr${s.inflationAdjusted ? ', inflation-adjusted' : ', fixed'}` });

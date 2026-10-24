@@ -138,7 +138,9 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
     // --- Income (after full-time work only) ----------------------------------
     let workIncome = 0;
     let spendingReal = inputs.retirementSpending;
+    const covered = active.some((p) => p.coversSpending);
     for (const p of active) {
+      if (p.coversSpending) continue;
       const yearsIn = age - phaseStart(p, retirementAge);
       workIncome += p.annualNetIncome * growth(p.incomeRealGrowth, yearsIn) * priceStart;
     }
@@ -230,8 +232,15 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
 
     if (!working) {
       spending = spendingReal * priceStart;
+      if (covered) {
+        // The phase earns whatever spending (and housing) other income leaves uncovered.
+        workIncome += Math.max(0, spending + housingCosts - workIncome - otherIncome);
+      }
       const income = workIncome + otherIncome;
-      if (strategy === 'fixed-real') {
+      if (covered) {
+        // The nest egg is left alone; any income above spending is invested.
+        surplusInvested = Math.max(0, income - spending - housingCosts);
+      } else if (strategy === 'fixed-real') {
         const need = spending + housingCosts - income;
         if (need > 0) {
           withdrawal = need / (1 - taxRate);

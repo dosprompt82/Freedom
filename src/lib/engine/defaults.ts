@@ -68,6 +68,7 @@ export function newWorkPhase(partial: Partial<WorkPhase> = {}): WorkPhase {
     annualNetIncome: 120_000,
     incomeRealGrowth: 0,
     spendingOverride: null,
+    coversSpending: false,
     ...partial,
   };
 }

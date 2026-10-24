@@ -1,5 +1,5 @@
 import { formatMoney, formatPct } from '../format';
-import { computeMetrics, depletionAge, targetReachedAge, workOptionalAge } from './metrics';
+import { computeMetrics, depletionAge, phaseSummaries, targetReachedAge, workOptionalAge } from './metrics';
 import { projectPlan } from './projection';
 import type { EquityAnalysis } from './equityAnalysis';
 import type { Insight, PlanInputs, PlanMetrics, Projection } from './types';
@@ -107,6 +107,24 @@ export function planInsights(
   }
 
   if (!retiring) return out;
+
+  // 7a. Consulting that covers spending: what it must earn, and what it lets the portfolio do.
+  for (const ph of phaseSummaries(projection).filter((x) => x.coversSpending)) {
+    const yrs = ph.end - ph.start;
+    const grew =
+      ph.portfolioStartReal != null && ph.portfolioEndReal != null
+        ? ` If it does, the portfolio is left alone and grows from about ${money(ph.portfolioStartReal)} to ${money(ph.portfolioEndReal)} over ${yrs === 1 ? 'that year' : `those ${yrs} years`} (${td}).`
+        : '';
+    out.push({
+      id: `covered-${ph.phaseId}`,
+      tone: 'neutral',
+      title: `${ph.label} must earn about ${money(ph.avgIncomeReal)} a year`,
+      body:
+        `From ${ph.start} to ${ph.end}, your plan assumes ${ph.label.toLowerCase()} covers all spending. That takes about ${money(ph.avgIncomeReal)} a year after tax in ${td}` +
+        (ph.maxIncomeReal > ph.avgIncomeReal * 1.05 ? `, up to ${money(ph.maxIncomeReal)} in the costliest year` : '') +
+        `.${grew}`,
+    });
+  }
 
   // 5. Working two more years.
   const delayed = projectPlan({ ...inputs, retirementAge: ret + 2 });

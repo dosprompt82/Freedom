@@ -26,7 +26,7 @@ export function normalizeInputs(raw: unknown): PlanInputs {
     assets: { ...d.assets, ...r.assets },
     withdrawal: { ...d.withdrawal, ...r.withdrawal },
     downturn: { ...d.downturn, ...r.downturn },
-    workPhases: r.workPhases ?? [],
+    workPhases: (r.workPhases ?? []).map((w) => ({ ...w, coversSpending: !!w.coversSpending })),
     incomeStreams: r.incomeStreams ?? [],
     events: r.events ?? [],
     properties: r.properties ?? [],

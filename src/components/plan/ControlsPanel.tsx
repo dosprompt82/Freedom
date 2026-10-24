@@ -1,9 +1,10 @@
 'use client';
 
-import { LIMITS, newWorkPhase, realReturn, type PlanInputs } from '@/lib/engine';
-import { formatPct } from '@/lib/format';
+import { useMemo } from 'react';
+import { LIMITS, newWorkPhase, phaseSummaries, projectPlan, realReturn, type PlanInputs } from '@/lib/engine';
+import { formatMoney, formatPct } from '@/lib/format';
 import { GLOSSARY } from '@/lib/glossary';
-import { InfoTip, SliderField } from '../ui';
+import { InfoTip, Segmented, SliderField } from '../ui';
 
 interface Props {
   inputs: PlanInputs;
@@ -16,6 +17,23 @@ interface Props {
 export function ControlsPanel({ inputs, onChange, dense }: Props) {
   const quick = inputs.workPhases.find((p) => p.anchor === 'retirement');
   const set = <K extends keyof PlanInputs>(key: K, v: PlanInputs[K]) => onChange((p) => ({ ...p, [key]: v }));
+
+  const need = useMemo(() => {
+    if (!quick?.coversSpending) return null;
+    return phaseSummaries(projectPlan(inputs)).find((x) => x.phaseId === quick.id) ?? null;
+  }, [inputs, quick]);
+
+  const setConsulting = (mode: 'none' | 'covers' | 'income') =>
+    onChange((p) => {
+      const existing = p.workPhases.find((w) => w.anchor === 'retirement');
+      if (mode === 'none') return { ...p, workPhases: p.workPhases.filter((w) => w !== existing) };
+      const coversSpending = mode === 'covers';
+      if (existing) return { ...p, workPhases: p.workPhases.map((w) => (w === existing ? { ...w, coversSpending } : w)) };
+      return {
+        ...p,
+        workPhases: [...p.workPhases, newWorkPhase({ label: 'Consulting', annualNetIncome: 120_000, years: 5, coversSpending })],
+      };
+    });
 
   const setPartTime = (income: number) =>
     onChange((p) => {
@@ -83,32 +101,57 @@ export function ControlsPanel({ inputs, onChange, dense }: Props) {
         format="percent"
         hint={<>Nominal. Real return {formatPct(realReturn(inputs.nominalReturn, inputs.inflation), 2)} <InfoTip term="Real return">{GLOSSARY.realReturn}</InfoTip></>}
       />
-      <SliderField
-        label="Part-time income"
-        ariaLabel="Annual after-tax part-time income after full-time work"
-        value={quick?.annualNetIncome ?? 0}
-        onChange={setPartTime}
-        min={0}
-        max={400_000}
-        hardMax={LIMITS.workIncome.max}
-        step={5_000}
-        format="money"
-        hint={quick ? `After tax, starting at ${inputs.retirementAge}.` : 'Optional consulting or part-time pay after full-time work ends.'}
-      />
-      {quick && (
-        <SliderField
-          label="Part-time years"
-          ariaLabel="Years of part-time work"
-          value={quick.years}
-          onChange={setPartTimeYears}
-          min={1}
-          max={20}
-          hardMax={40}
-          step={1}
-          integer
-          format="years"
-        />
-      )}
+      <div className="space-y-4 rounded-xl border border-line bg-surface-2/40 p-3.5">
+        <div>
+          <div className="mb-2 text-[13px] font-medium text-ink-2">Consulting after full-time work</div>
+          <Segmented
+            label="Consulting after full-time work"
+            size="sm"
+            value={!quick ? 'none' : quick.coversSpending ? 'covers' : 'income'}
+            onChange={setConsulting}
+            options={[
+              { value: 'none', label: 'None' },
+              { value: 'covers', label: 'Covers expenses' },
+              { value: 'income', label: 'Set income' },
+            ]}
+          />
+        </div>
+        {quick && !quick.coversSpending && (
+          <SliderField
+            label="Consulting income"
+            ariaLabel="Annual after-tax consulting income"
+            value={quick.annualNetIncome}
+            onChange={setPartTime}
+            min={0}
+            max={400_000}
+            hardMax={LIMITS.workIncome.max}
+            step={5_000}
+            format="money"
+            hint={`After tax, today’s dollars, starting at ${inputs.retirementAge}.`}
+          />
+        )}
+        {quick && (
+          <SliderField
+            label="Consulting years"
+            ariaLabel="Years of consulting"
+            value={quick.years}
+            onChange={setPartTimeYears}
+            min={1}
+            max={20}
+            hardMax={40}
+            step={1}
+            integer
+            format="years"
+            hint={
+              quick.coversSpending && need ? (
+                <>
+                  Ages {need.start}–{need.end - 1}. Needs about <strong className="text-ink">{formatMoney(need.avgIncomeReal, { approx: true })}/yr</strong> after tax so the portfolio is never touched.
+                </>
+              ) : undefined
+            }
+          />
+        )}
+      </div>
       {!dense && (
         <>
           <SliderField

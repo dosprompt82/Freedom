@@ -155,7 +155,7 @@ export default function FinancialPicturePage() {
             </>
           ) : (
             <div className="border-t border-line px-5 py-4 text-[13px] text-ink-2 sm:px-6">
-              Consulting phases, pensions, one-time events, real estate and stress tests live in{' '}
+              Multiple work phases, pensions, one-time events, real estate and stress tests live in{' '}
               <button onClick={() => setUiMode('advanced')} className="font-medium text-accent hover:underline">
                 Advanced mode
               </button>

@@ -29,6 +29,7 @@ While `age < retirementAge`: `contribution_t = annualSavings × (1 + savingsReal
 
 - Spending: `retirementSpending × priceStart` (or a work phase's spending override).
 - Income: active work phases (`annualNetIncome × (1+g)^(years into phase) × priceStart`) plus other income streams (inflation-adjusted or fixed). Phases and streams never apply before `retirementAge`.
+- A phase marked *covers spending* earns exactly the year's spending + housing not met by other income; nothing is withdrawn (under either strategy) and its entered income is ignored. `phaseSummaries` reports the after-tax income this requires.
 - Housing costs are added only for properties marked "costs separate from spending" (carrying costs × priceStart + actual mortgage payment), until a sale.
 
 ### Fixed real spending

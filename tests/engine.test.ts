@@ -8,6 +8,7 @@ import {
   expectedEquityValue,
   newEquityHolding,
   normalizeInputs,
+  phaseSummaries,
   computeMetrics,
   computeMilestones,
   defaultInputs,
@@ -164,6 +165,37 @@ describe('work phases', () => {
     const m = computeMetrics(p);
     expect(m.transitionYears).toBe(4);
     expect(m.totalYearsWorked).toBe(14);
+  });
+
+  it('can assume consulting covers all spending, leaving the portfolio untouched', () => {
+    const inputs = plain({
+      inflation: 0.02,
+      workPhases: [newWorkPhase({ years: 4, coversSpending: true, annualNetIncome: 1 })],
+      incomeStreams: [newIncomeStream({ startAge: 52, endAge: 200, annualAmount: 30_000 })],
+    });
+    const p = projectPlan(inputs);
+    for (const age of [50, 51, 52, 53]) {
+      const y = p.years.find((r) => r.age === age)!;
+      expect(y.withdrawal).toBe(0);
+      expect(y.surplusInvested).toBe(0);
+      close(y.workIncome + y.otherIncome, y.spending, 1e-6);
+      close(y.endBalance, y.beginBalance * 1.05, 1e-6);
+    }
+    close(p.years.find((r) => r.age === 52)!.workIncome / p.years.find((r) => r.age === 52)!.priceStart, 70_000, 1e-6);
+    expect(p.years.find((r) => r.age === 54)!.withdrawal).toBeGreaterThan(0);
+    const sum = phaseSummaries(p)[0];
+    expect(sum).toMatchObject({ start: 50, end: 54, coversSpending: true, withdrawalsReal: 0 });
+    close(sum.avgIncomeReal, (100_000 * 2 + 70_000 * 2) / 4, 1e-6);
+  });
+
+  it('keeps a covered phase withdrawal-free under the percentage strategy too', () => {
+    const inputs = plain({
+      withdrawal: { ...plain().withdrawal, strategy: 'percentage' },
+      workPhases: [newWorkPhase({ years: 3, coversSpending: true })],
+    });
+    const p = projectPlan(inputs);
+    expect(p.years.find((r) => r.age === 51)!.withdrawal).toBe(0);
+    expect(p.years.find((r) => r.age === 53)!.withdrawal).toBeGreaterThan(0);
   });
 
   it('applies other income only after full-time work ends', () => {

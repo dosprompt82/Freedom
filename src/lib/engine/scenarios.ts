@@ -37,6 +37,19 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     },
   },
   {
+    id: 'consulting-covers',
+    name: 'Consulting covers expenses',
+    description: 'Leave full-time work as planned and consult for five years, earning enough to cover spending without touching the portfolio.',
+    apply: (b) => {
+      const n = clone(b);
+      n.workPhases = [
+        ...n.workPhases.filter((w) => w.anchor !== 'retirement'),
+        newWorkPhase({ label: 'Consulting', anchor: 'retirement', years: 5, coversSpending: true }),
+      ];
+      return n;
+    },
+  },
+  {
     id: 'equity-none',
     name: 'Equity never pays out',
     description: 'Plan without any company equity proceeds.',

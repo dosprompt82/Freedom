@@ -46,6 +46,12 @@ export interface WorkPhase {
   incomeRealGrowth: Rate;
   /** Optional spending (today's $) during this phase, replacing retirement spending. */
   spendingOverride: Dollars | null;
+  /**
+   * When true, the phase is assumed to earn exactly what the household spends
+   * each year (after other income), so nothing is withdrawn from the portfolio
+   * and annualNetIncome is ignored. The model reports the income this requires.
+   */
+  coversSpending: boolean;
 }
 
 /** Non-work income after full-time work ends: pension, Social Security, annuity, rent. */

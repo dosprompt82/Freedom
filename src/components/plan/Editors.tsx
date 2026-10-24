@@ -179,11 +179,27 @@ export function WorkPhasesEditor({ inputs, onChange }: EditorProps) {
                 <NumberInput hideLabel={false} label="Start age" value={w.startAge} integer min={inputs.currentAge} max={inputs.planningHorizonAge} onChange={(startAge) => update(w.id, { startAge })} />
               )}
               <NumberInput hideLabel={false} label="Years" value={w.years} integer min={1} max={50} onChange={(years) => update(w.id, { years })} />
-              <NumberInput hideLabel={false} label="After-tax income per year" value={w.annualNetIncome} format="money" min={0} max={LIMITS.workIncome.max} onChange={(annualNetIncome) => update(w.id, { annualNetIncome })} />
-              <NumberInput hideLabel={false} label="Income growth above inflation" value={w.incomeRealGrowth} format="percent" min={-0.2} max={0.2} onChange={(incomeRealGrowth) => update(w.id, { incomeRealGrowth })} />
+              {!w.coversSpending && (
+                <>
+                  <NumberInput hideLabel={false} label="After-tax income per year" value={w.annualNetIncome} format="money" min={0} max={LIMITS.workIncome.max} onChange={(annualNetIncome) => update(w.id, { annualNetIncome })} />
+                  <NumberInput hideLabel={false} label="Income growth above inflation" value={w.incomeRealGrowth} format="percent" min={-0.2} max={0.2} onChange={(incomeRealGrowth) => update(w.id, { incomeRealGrowth })} />
+                </>
+              )}
               <div>
                 <NumberInput hideLabel={false} label="Spending during phase (optional)" value={w.spendingOverride ?? 0} format="money" min={0} max={LIMITS.retirementSpending.max} onChange={(v) => update(w.id, { spendingOverride: v > 0 ? v : null })} />
                 <p className="mt-1 text-[11.5px] text-ink-3">Leave at $0 to use your retirement spending.</p>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <Switch
+                  checked={w.coversSpending}
+                  onChange={(coversSpending) => update(w.id, { coversSpending })}
+                  label="Assume this work covers all expenses"
+                  description={
+                    w.coversSpending
+                      ? 'Nothing is withdrawn from the portfolio during this phase. The plan shows how much the work needs to earn.'
+                      : 'Income is as entered; any shortfall comes from the portfolio and any surplus is invested.'
+                  }
+                />
               </div>
             </Grid>
           </ItemCard>

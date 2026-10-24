@@ -1,5 +1,5 @@
 import { formatAge, formatMoney } from '../format';
-import { depletionAge, targetReachedAge, workOptionalAge, workPhaseWindows } from './metrics';
+import { depletionAge, phaseSummaries, targetReachedAge, workOptionalAge, workPhaseWindows } from './metrics';
 import type { Milestone, PlanInputs, Projection } from './types';
 
 const yearOf = (inputs: PlanInputs, age: number) => inputs.startYear + (age - inputs.currentAge);
@@ -63,15 +63,19 @@ export function computeMilestones(projection: Projection, ctx: MilestoneContext 
     );
   }
 
+  const summaries = phaseSummaries(projection);
   for (const w of workPhaseWindows(inputs)) {
     if (w.start > horizon) continue;
+    const sum = summaries.find((x) => x.phaseId === w.phase.id);
     out.push(
       mk({
         id: `phase-start-${w.phase.id}`,
         kind: 'phase-start',
         label: `${w.phase.label} begins`,
         age: w.start,
-        detail: `${formatMoney(w.phase.annualNetIncome, { compact: true })}/yr after tax (today's dollars) for ${w.end - w.start} year${w.end - w.start === 1 ? '' : 's'}.`,
+        detail: w.phase.coversSpending
+          ? `Assumed to cover all spending for ${w.end - w.start} year${w.end - w.start === 1 ? '' : 's'}, so the portfolio is not touched. That takes about ${formatMoney(sum?.avgIncomeReal ?? 0, { compact: true })}/yr after tax (today's dollars).`
+          : `${formatMoney(w.phase.annualNetIncome, { compact: true })}/yr after tax (today's dollars) for ${w.end - w.start} year${w.end - w.start === 1 ? '' : 's'}.`,
         tone: 'neutral',
       }),
     );
