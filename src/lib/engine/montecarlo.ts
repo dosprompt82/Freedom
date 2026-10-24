@@ -1,3 +1,4 @@
+import { sampleEquityPayouts } from './equity';
 import { depletionAge } from './metrics';
 import { projectPlan } from './projection';
 import type { PlanInputs } from './types';
@@ -16,6 +17,10 @@ import type { PlanInputs } from './types';
  * lognormal tails are thinner than historical crashes, and the result depends
  * entirely on the mean and volatility you choose. It is an illustration of
  * dispersion, not a forecast.
+ *
+ * Equity holdings are drawn per path too: whether a liquidity event happens
+ * (its probability), which outcome (25% conservative / 50% base / 25%
+ * optimistic) and when (uniform across the earliest–latest window).
  */
 
 /** Mulberry32: small, fast, seedable PRNG. Deterministic for a given seed. */
@@ -42,12 +47,16 @@ export interface MonteCarloOptions {
   paths?: number;
   volatility?: number;
   seed?: number;
+  /** Draw each equity holding's payout (whether, how much, when) per path. Default true. */
+  equityUncertainty?: boolean;
 }
 
 export interface MonteCarloResult {
   paths: number;
   volatility: number;
   seed: number;
+  /** Whether equity outcomes were drawn per path. */
+  equityUncertainty: boolean;
   /** Share of paths that fund planned spending through the planning horizon. */
   successRate: number;
   /** Real (today's dollars) balance percentiles on reaching each age. */
@@ -79,10 +88,14 @@ export function runMonteCarlo(inputs: PlanInputs, opts: MonteCarloOptions = {}):
   let successes = 0;
   const depletions: number[] = [];
   const seq = new Array<number>(periods);
+  const drawEquity = (opts.equityUncertainty ?? true) && inputs.equity.length > 0;
 
   for (let k = 0; k < paths; k++) {
     for (let t = 0; t < periods; t++) seq[t] = Math.exp(mu + s * normal(rand)) - 1;
-    const p = projectPlan(inputs, { returnSequence: seq });
+    const p = projectPlan(inputs, {
+      returnSequence: seq,
+      equityPayouts: drawEquity ? sampleEquityPayouts(inputs, rand) : undefined,
+    });
     const dep = depletionAge(p);
     if (dep == null) successes++;
     else depletions.push(dep);
@@ -108,6 +121,7 @@ export function runMonteCarlo(inputs: PlanInputs, opts: MonteCarloOptions = {}):
     paths,
     volatility,
     seed,
+    equityUncertainty: drawEquity,
     successRate: successes / paths,
     bands,
     medianDepletionAge: depletions.length > paths / 2 ? depletions[Math.floor(paths / 2)] : null,

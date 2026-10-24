@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  analyzeEquity,
   analyzeWithInsights,
   balanceAtAge,
+  breakevenEquity,
+  equityPayouts,
+  expectedEquityValue,
+  newEquityHolding,
+  normalizeInputs,
   computeMetrics,
   computeMilestones,
   defaultInputs,
@@ -197,21 +203,71 @@ describe('one-time events', () => {
   });
 });
 
-describe('private equity', () => {
-  const pe = (selectedCase: 'none' | 'conservative' | 'base' | 'optimistic') =>
-    plain({
-      privateEquity: { ...plain().privateEquity, enabled: true, age: 45, conservative: 1e5, base: 5e5, optimistic: 9e5, selectedCase },
+describe('company equity', () => {
+  const holding = (over: Partial<Parameters<typeof newEquityHolding>[0]> = {}) =>
+    newEquityHolding({
+      id: 'eq',
+      conservative: 1e6,
+      base: 2e6,
+      optimistic: 4e6,
+      taxRate: 0.25,
+      probability: 0.8,
+      expectedAge: 45,
+      earliestAge: 43,
+      latestAge: 48,
+      ...over,
     });
-  it('includes only the selected case, and nothing for "none"', () => {
-    expect(projectPlan(pe('none')).years[5].eventsIn).toBe(0);
-    expect(projectPlan(pe('conservative')).years[5].eventsIn).toBe(1e5);
-    expect(projectPlan(pe('base')).years[5].eventsIn).toBe(5e5);
-    expect(projectPlan(pe('optimistic')).years[5].eventsIn).toBe(9e5);
+  const withEq = (outcome: 'none' | 'conservative' | 'base' | 'optimistic', timing: 'expected' | 'earliest' | 'latest' = 'expected', over = {}) =>
+    plain({ equity: [holding(over)], equityAssumption: { outcome, timing } });
+
+  it('adds only the selected outcome, after tax, at the selected timing', () => {
+    expect(projectPlan(withEq('none')).years.every((y) => y.events.every((e) => e.kind !== 'equity'))).toBe(true);
+    close(projectPlan(withEq('base')).years[5].eventsIn, 1.5e6, 1e-6);
+    close(projectPlan(withEq('conservative', 'earliest')).years[3].eventsIn, 0.75e6, 1e-6);
+    close(projectPlan(withEq('optimistic', 'latest')).years[8].eventsIn, 3e6, 1e-6);
   });
-  it('is not treated as liquid before the event', () => {
-    const withPe = projectPlan(pe('optimistic'));
-    const noPe = projectPlan(pe('none'));
-    expect(withPe.years[5].beginBalance).toBe(noPe.years[5].beginBalance);
+
+  it('is never treated as liquid before it pays out', () => {
+    expect(projectPlan(withEq('optimistic')).years[5].beginBalance).toBe(projectPlan(withEq('none')).years[5].beginBalance);
+  });
+
+  it('spreads staged payouts evenly', () => {
+    const p = projectPlan(withEq('base', 'expected', { payoutYears: 3 }));
+    for (const k of [5, 6, 7]) close(p.years[k].eventsIn, 0.5e6, 1e-6);
+    expect(p.years[8].eventsIn).toBe(0);
+  });
+
+  it('computes a probability-weighted value', () => {
+    // 0.8 × (0.25×0.75M + 0.5×1.5M + 0.25×3M) = 0.8 × 1.6875M
+    close(expectedEquityValue(withEq('base')), 0.8 * 1.6875e6, 1e-6);
+  });
+
+  it('finds the minimum proceeds the plan needs', () => {
+    const inputs = withEq('base', 'expected');
+    const be = breakevenEquity({ ...inputs, retirementAge: 43 });
+    expect(be.status).toBe('needed');
+    if (be.status !== 'needed') return;
+    const scale = be.netAmount / 1.5e6;
+    const ok = projectPlan({ ...inputs, retirementAge: 43 }, { equityPayouts: equityPayouts(inputs, 'base', 'expected', scale * 1.001) });
+    const short = projectPlan({ ...inputs, retirementAge: 43 }, { equityPayouts: equityPayouts(inputs, 'base', 'expected', scale * 0.99) });
+    expect(computeMetrics(ok).depletionAge).toBeNull();
+    expect(computeMetrics(short).depletionAge).not.toBeNull();
+  });
+
+  it('reports a work-optional range across outcomes', () => {
+    const a = analyzeEquity(withEq('base'));
+    expect(a.grid).toHaveLength(10);
+    expect(a.workOptionalBest).not.toBeNull();
+    expect(a.workOptionalBest!).toBeLessThanOrEqual(a.workOptionalWithout ?? Infinity);
+  });
+
+  it('migrates the version-1 single equity block', () => {
+    const legacy = { ...plain(), equity: undefined, equityAssumption: undefined, privateEquity: { enabled: true, label: 'Old', age: 47, conservative: 1, base: 2, optimistic: 3, selectedCase: 'optimistic' } };
+    const n = normalizeInputs(legacy);
+    expect(n.equity).toHaveLength(1);
+    expect(n.equity[0]).toMatchObject({ label: 'Old', expectedAge: 47, taxRate: 0, probability: 1, base: 2 });
+    expect(n.equityAssumption.outcome).toBe('optimistic');
+    expect('privateEquity' in n).toBe(false);
   });
 });
 
@@ -354,6 +410,14 @@ describe('scenarios', () => {
 });
 
 describe('monte carlo', () => {
+  it('draws equity outcomes per path when holdings exist', () => {
+    const inputs = plain({ retirementAge: 45, equity: [newEquityHolding({ expectedAge: 44, earliestAge: 42, latestAge: 46, probability: 0.5 })] });
+    const withEq = runMonteCarlo(inputs, { paths: 400, seed: 1 });
+    const fixed = runMonteCarlo(inputs, { paths: 400, seed: 1, equityUncertainty: false });
+    expect(withEq.equityUncertainty).toBe(true);
+    expect(withEq.successRate).not.toBe(fixed.successRate);
+  });
+
   it('is reproducible for a seed', () => {
     const a = runMonteCarlo(plain(), { paths: 200, seed: 7 });
     const b = runMonteCarlo(plain(), { paths: 200, seed: 7 });

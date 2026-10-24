@@ -8,7 +8,6 @@ import {
   newIncomeStream,
   newProperty,
   newWorkPhase,
-  type EquityCase,
   type EventCategory,
   type IncomeStream,
   type OneTimeEvent,
@@ -25,11 +24,11 @@ export interface EditorProps {
   onChange: (fn: (p: PlanInputs) => PlanInputs) => void;
 }
 
-function Grid({ children }: { children: ReactNode }) {
+export function Grid({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>;
 }
 
-function ItemCard({ children, onRemove, title }: { children: ReactNode; onRemove: () => void; title: string }) {
+export function ItemCard({ children, onRemove, title }: { children: ReactNode; onRemove: () => void; title: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface-2/40 p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -43,7 +42,7 @@ function ItemCard({ children, onRemove, title }: { children: ReactNode; onRemove
   );
 }
 
-function Note({ children }: { children: ReactNode }) {
+export function Note({ children }: { children: ReactNode }) {
   return <p className="mb-4 text-[12.5px] leading-relaxed text-ink-3">{children}</p>;
 }
 
@@ -292,46 +291,6 @@ export function EventsEditor({ inputs, onChange }: EditorProps) {
       <Button size="sm" className="mt-3" onClick={() => onChange((p) => ({ ...p, events: [...p.events, newEvent({ age: Math.min(p.currentAge + 5, p.planningHorizonAge) })] }))}>
         + Add event
       </Button>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------- Equity */
-
-export function EquityEditor({ inputs, onChange }: EditorProps) {
-  const pe = inputs.privateEquity;
-  const setPe = (patch: Partial<PlanInputs['privateEquity']>) => onChange((p) => ({ ...p, privateEquity: { ...p.privateEquity, ...patch } }));
-  return (
-    <div className="space-y-4">
-      <Switch checked={pe.enabled} onChange={(enabled) => setPe({ enabled, selectedCase: enabled && pe.selectedCase === 'none' ? 'base' : pe.selectedCase })} label="Model a private equity liquidity event" description="Private company equity is never counted as spendable before the payout year." />
-      {pe.enabled && (
-        <>
-          <Grid>
-            <TextInput label="Name" value={pe.label} onChange={(label) => setPe({ label })} />
-            <NumberInput hideLabel={false} label="Expected at age" value={pe.age} integer min={inputs.currentAge} max={inputs.planningHorizonAge} onChange={(age) => setPe({ age })} />
-            <div />
-            <NumberInput hideLabel={false} label="Conservative net payout" value={pe.conservative} format="money" min={0} max={LIMITS.assets.max} onChange={(conservative) => setPe({ conservative })} />
-            <NumberInput hideLabel={false} label="Base net payout" value={pe.base} format="money" min={0} max={LIMITS.assets.max} onChange={(base) => setPe({ base })} />
-            <NumberInput hideLabel={false} label="Optimistic net payout" value={pe.optimistic} format="money" min={0} max={LIMITS.assets.max} onChange={(optimistic) => setPe({ optimistic })} />
-          </Grid>
-          <div>
-            <span className="mb-1.5 block text-[13px] text-ink-2">Case used in this plan</span>
-            <Segmented<EquityCase>
-              label="Equity case"
-              value={pe.selectedCase}
-              onChange={(selectedCase) => setPe({ selectedCase })}
-              options={[
-                { value: 'none', label: 'No payout' },
-                { value: 'conservative', label: 'Conservative' },
-                { value: 'base', label: 'Base' },
-                { value: 'optimistic', label: 'Optimistic' },
-              ]}
-              size="sm"
-            />
-          </div>
-          <Switch checked={pe.inflationAdjusted} onChange={(inflationAdjusted) => setPe({ inflationAdjusted })} label="Amounts are in today’s dollars" description={pe.inflationAdjusted ? 'Payouts will be inflated to the payout year.' : 'Payouts are fixed future-dollar amounts (typical for deal estimates).'} />
-        </>
-      )}
     </div>
   );
 }

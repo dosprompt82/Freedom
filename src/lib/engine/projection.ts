@@ -1,3 +1,4 @@
+import { equityPayouts, type EquityPayout } from './equity';
 import { growth, investableAssets } from './math';
 import type {
   DollarMode,
@@ -40,6 +41,8 @@ export interface ProjectionOptions {
   strategy?: PlanInputs['withdrawal']['strategy'];
   /** Ignore all work phases (used to test whether work is truly optional). */
   excludeWorkPhases?: boolean;
+  /** Use these equity payouts instead of the plan's outcome/timing assumption. */
+  equityPayouts?: readonly EquityPayout[];
 }
 
 export function phaseStart(phase: WorkPhase, retirementAge: number): number {
@@ -106,6 +109,7 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
   const i = inputs.inflation;
   const taxRate = Math.min(0.95, Math.max(0, inputs.withdrawal.taxRate));
   const periods = Math.max(0, inputs.planningHorizonAge - inputs.currentAge + 1);
+  const payouts = options.equityPayouts ?? equityPayouts(inputs);
 
   const props: PropertyState[] = inputs.properties.map((p) => ({
     value: p.currentValue,
@@ -166,14 +170,13 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
       }
     }
 
-    const pe = inputs.privateEquity;
-    if (pe.enabled && pe.selectedCase !== 'none' && pe.age === age) {
-      const raw = pe[pe.selectedCase];
-      if (raw > 0) {
-        const amt = pe.inflationAdjusted ? raw * priceEnd : raw;
-        eventsIn += amt;
-        events.push({ label: `${pe.label} (${pe.selectedCase})`, kind: 'equity', amount: amt });
-      }
+    for (const pay of payouts) {
+      if (age < pay.age || age >= pay.age + pay.years) continue;
+      const part = pay.netTotal / pay.years;
+      const amt = pay.inflationAdjusted ? part * priceEnd : part;
+      eventsIn += amt;
+      const staged = pay.years > 1 ? ` · ${age - pay.age + 1} of ${pay.years}` : '';
+      events.push({ label: `${pay.label} (${pay.outcome}${staged})`, kind: 'equity', amount: amt });
     }
 
     if (inputs.downturn.enabled && inputs.downturn.age === age && !options.returnSequence) {

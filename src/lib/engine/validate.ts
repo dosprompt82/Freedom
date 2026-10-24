@@ -73,9 +73,17 @@ export function validateInputs(inputs: PlanInputs): ValidationIssue[] {
       warn(`properties.${p.id}`, `The sale of “${p.label}” falls outside the planning window and is ignored.`);
     }
   }
-  const pe = inputs.privateEquity;
-  if (pe.enabled && !(pe.conservative <= pe.base && pe.base <= pe.optimistic)) {
-    warn('privateEquity', 'Equity cases are usually ordered conservative ≤ base ≤ optimistic.');
+  for (const h of inputs.equity) {
+    const f = `equity.${h.id}`;
+    if (!(h.conservative <= h.base && h.base <= h.optimistic)) {
+      warn(f, `“${h.label}”: outcomes are usually ordered conservative ≤ base ≤ optimistic.`);
+    }
+    if (!(h.earliestAge <= h.expectedAge && h.expectedAge <= h.latestAge)) {
+      warn(f, `“${h.label}”: the expected age should fall between the earliest and latest ages.`);
+    }
+    if (h.latestAge > inputs.planningHorizonAge || h.earliestAge < inputs.currentAge) {
+      warn(f, `“${h.label}”: part of the payout window falls outside the plan and may be ignored.`);
+    }
   }
   return issues;
 }

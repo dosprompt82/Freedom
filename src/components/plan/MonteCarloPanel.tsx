@@ -32,7 +32,7 @@ export function MonteCarloPanel({ inputs }: { inputs: PlanInputs }) {
         {stale && <Badge tone="caution">Assumptions changed — re-run</Badge>}
       </div>
       <p className="mt-3 text-[12.5px] leading-relaxed text-ink-3">
-        {GLOSSARY.monteCarlo} Each path draws independent annual returns (lognormal, mean {formatPct(inputs.nominalReturn)} nominal, volatility {formatPct(vol)}) with inflation held at {formatPct(inputs.inflation)}. It ignores fat tails, momentum, and links between inflation and returns. Seeded, so results are reproducible. The median path usually ends below the steady projection, because uneven returns compound at less than their average.
+        {GLOSSARY.monteCarlo} Each path draws independent annual returns (lognormal, mean {formatPct(inputs.nominalReturn)} nominal, volatility {formatPct(vol)}) with inflation held at {formatPct(inputs.inflation)}. It ignores fat tails, momentum, and links between inflation and returns. {inputs.equity.length > 0 && ' Each path also draws whether your equity pays out (its probability), which outcome (25% conservative, 50% base, 25% optimistic) and when within its window.'} Seeded, so results are reproducible. The median path usually ends below the steady projection, because uneven returns compound at less than their average.
       </p>
       {result && data && (
         <div className="mt-5">

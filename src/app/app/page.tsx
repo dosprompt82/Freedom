@@ -8,17 +8,18 @@ import {
   AssetsEditor,
   BasicsEditor,
   DownturnEditor,
-  EquityEditor,
   EventsEditor,
   IncomeStreamsEditor,
   RealEstateEditor,
   StrategyEditor,
   WorkPhasesEditor,
 } from '@/components/plan/Editors';
+import { EquityBadge, EquityEditor, EquityPanel } from '@/components/plan/Equity';
 import { InsightList } from '@/components/plan/Insights';
 import { KpiCards } from '@/components/plan/KpiCards';
 import { Badge, Card, CardHeader, Disclosure, Stat } from '@/components/ui';
-import { investableAssets } from '@/lib/engine';
+import { equityBand, investableAssets } from '@/lib/engine';
+import { useMemo } from 'react';
 import { formatMoney } from '@/lib/format';
 import { useAnalysis } from '@/lib/hooks';
 import { useActivePlan, useStore } from '@/lib/store';
@@ -31,6 +32,7 @@ export default function FinancialPicturePage() {
   const setUiMode = useStore((s) => s.setUiMode);
   const analysis = useAnalysis(plan.inputs);
   const { inputs } = plan;
+  const band = useMemo(() => equityBand(analysis.inputs, mode), [analysis.inputs, mode]);
   const unit = mode === 'real' ? "today's dollars" : 'future dollars';
 
   return (
@@ -42,7 +44,23 @@ export default function FinancialPicturePage() {
       />
       <IssuesBanner issues={analysis.issues} />
 
-      <KpiCards analysis={analysis} mode={mode} />
+      <KpiCards analysis={analysis} mode={mode} equity={analysis.equity} />
+
+      <Card className="mt-5">
+        <CardHeader
+          title="Company equity and liquidity"
+          subtitle="Wealth you own but can’t spend yet. Modeled as a range of outcomes and timings, never as cash until it pays out."
+          action={<EquityBadge inputs={inputs} />}
+        />
+        <EquityPanel inputs={inputs} onChange={updateInputs} analysis={analysis.equity} />
+        {inputs.equity.length > 0 && (
+          <div className="border-t border-line">
+            <Disclosure title="Edit equity holdings" subtitle={`${inputs.equity.length} holding${inputs.equity.length === 1 ? '' : 's'} · values, tax, timing window, probability`}>
+              <EquityEditor inputs={inputs} onChange={updateInputs} />
+            </Disclosure>
+          </div>
+        )}
+      </Card>
 
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-5">
@@ -57,7 +75,7 @@ export default function FinancialPicturePage() {
               }
             />
             <div className="px-2 pb-4 pt-2 sm:px-4">
-              <FreedomChart analysis={analysis} mode={mode} height={320} />
+              <FreedomChart analysis={analysis} mode={mode} height={320} band={band} />
               <div className="px-3 pt-2">
                 <ChartLegend
                   items={[
@@ -65,6 +83,7 @@ export default function FinancialPicturePage() {
                     { label: 'Withdrawal phase', color: 'var(--chart-2)' },
                     { label: 'Freedom Target', color: 'var(--gold)', dashed: true },
                     { label: 'One-time event', color: 'var(--gold)', dot: true },
+                    ...(band.length ? [{ label: 'Range of equity outcomes', color: 'var(--gold)', band: true }] : []),
                   ]}
                 />
               </div>
@@ -127,9 +146,6 @@ export default function FinancialPicturePage() {
               <Disclosure title="One-time events" subtitle="Windfalls, college, home purchases, gifts" badge={inputs.events.length ? <Badge>{inputs.events.length}</Badge> : undefined}>
                 <EventsEditor inputs={inputs} onChange={updateInputs} />
               </Disclosure>
-              <Disclosure title="Private equity liquidity" subtitle="Conservative, base and optimistic payouts" badge={inputs.privateEquity.enabled ? <Badge tone="gold">{inputs.privateEquity.selectedCase}</Badge> : undefined}>
-                <EquityEditor inputs={inputs} onChange={updateInputs} />
-              </Disclosure>
               <Disclosure title="Real estate" subtitle="Value, mortgage, carrying costs, planned sale" badge={inputs.properties.length ? <Badge>{inputs.properties.length}</Badge> : undefined}>
                 <RealEstateEditor inputs={inputs} onChange={updateInputs} />
               </Disclosure>
@@ -139,7 +155,7 @@ export default function FinancialPicturePage() {
             </>
           ) : (
             <div className="border-t border-line px-5 py-4 text-[13px] text-ink-2 sm:px-6">
-              Consulting phases, one-time events, equity payouts, real estate and stress tests live in{' '}
+              Consulting phases, pensions, one-time events, real estate and stress tests live in{' '}
               <button onClick={() => setUiMode('advanced')} className="font-medium text-accent hover:underline">
                 Advanced mode
               </button>

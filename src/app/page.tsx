@@ -86,7 +86,7 @@ export default function LandingPage() {
           <Pillar
             n="01"
             title="See where you stand"
-            body="Answer seven questions. Get a year-by-year projection of your investable assets, a Freedom Target, and the earliest age work could become optional."
+            body="Answer eight short questions. Get a year-by-year projection of your investable assets, a Freedom Target, and the earliest age work could become optional."
           />
           <Pillar
             n="02"
@@ -113,7 +113,7 @@ export default function LandingPage() {
               Retirement doesn’t have to mean never working again. It might mean consulting, going part-time, or simply having the ability to say no. Freedom at 50 models the transitions real professionals make — bonuses, equity, a home sale, college — without pretending to know the future.
             </p>
             <ul className="mt-7 space-y-2.5 text-[14px] text-ink-2">
-              {['Multiple employment phases with after-tax income', 'Conservative, base and optimistic equity payouts', 'Deterministic downturn stress tests', 'Today’s or future dollars, always labeled'].map((t) => (
+              {['Multiple employment phases with after-tax income', 'Company equity as a range of outcomes and timings', 'Deterministic downturn stress tests', 'Today’s or future dollars, always labeled'].map((t) => (
                 <li key={t} className="flex items-center gap-2.5">
                   <ToneIcon tone="positive" />
                   {t}

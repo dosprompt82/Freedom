@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/Logo';
-import { Button, NumberInput, cx, type NumberFormat } from '@/components/ui';
-import { analyzePlan, defaultInputs, LIMITS, realReturn, type PlanInputs } from '@/lib/engine';
+import { Button, NumberInput, Segmented, cx, type NumberFormat } from '@/components/ui';
+import { analyzeEquity, analyzePlan, defaultInputs, LIMITS, newEquityHolding, realReturn, type PlanInputs } from '@/lib/engine';
 import { formatMoney, formatPct } from '@/lib/format';
 import { GLOSSARY } from '@/lib/glossary';
 import { useStore } from '@/lib/store';
@@ -125,6 +125,20 @@ const STEPS: Step[] = [
     ],
   },
   {
+    key: 'equity',
+    question: 'Do you own equity you can’t sell yet?',
+    help: 'Vested private company shares, unsold RSUs, options, carried interest or a stake in a business. It won’t count as spendable until it pays out — but it can change when work becomes optional.',
+    format: 'money',
+    get: (p) => p.equity[0]?.base ?? 0,
+    set: (p) => p,
+    min: 0,
+    max: LIMITS.assets.max,
+    sliderMin: 0,
+    sliderMax: 10_000_000,
+    step: 50_000,
+    optional: true,
+  },
+  {
     key: 'return',
     question: 'What average annual return do you expect?',
     help: <>{GLOSSARY.nominalReturn} We suggest starting at 6% and stress-testing lower.</>,
@@ -220,7 +234,7 @@ export default function OnboardingPage() {
             </p>
             <h1 className="mt-3 text-[30px] font-semibold leading-[1.15] tracking-[-0.03em] text-ink sm:text-[38px]">{step.question}</h1>
             <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-ink-2">{step.help}</p>
-            <StepInput step={step} inputs={inputs} onChange={setInputs} />
+            {step.key === 'equity' ? <EquityStep inputs={inputs} onChange={setInputs} /> : <StepInput step={step} inputs={inputs} onChange={setInputs} />}
             <div className="mt-10 flex items-center justify-between">
               <Button variant="ghost" onClick={back} disabled={idx === 0}>
                 ← Back
@@ -307,8 +321,65 @@ function StepInput({ step, inputs, onChange }: { step: Step; inputs: PlanInputs;
   );
 }
 
+function EquityStep({ inputs, onChange }: { inputs: PlanInputs; onChange: (p: PlanInputs) => void }) {
+  const h = inputs.equity[0];
+  const setH = (patch: Partial<NonNullable<typeof h>>) => {
+    if (!h) return;
+    const next = { ...h, ...patch };
+    if (patch.base != null) {
+      next.conservative = Math.round(patch.base * 0.5);
+      next.optimistic = Math.round(patch.base * 1.5);
+    }
+    if (patch.expectedAge != null) {
+      next.earliestAge = Math.max(inputs.currentAge, patch.expectedAge - 2);
+      next.latestAge = patch.expectedAge + 3;
+    }
+    onChange({ ...inputs, equity: [next, ...inputs.equity.slice(1)] });
+  };
+  const toggle = (yes: boolean) => {
+    if (!yes) return onChange({ ...inputs, equity: [] });
+    if (h) return;
+    const age = Math.min(inputs.retirementAge, inputs.currentAge + 4);
+    onChange({
+      ...inputs,
+      equity: [newEquityHolding({ base: 2_000_000, conservative: 1_000_000, optimistic: 3_000_000, expectedAge: age, earliestAge: Math.max(inputs.currentAge, age - 2), latestAge: age + 3 })],
+      equityAssumption: { outcome: 'base', timing: 'expected' },
+    });
+  };
+  return (
+    <div className="mt-8 space-y-6">
+      <Segmented
+        label="Do you own illiquid equity?"
+        value={h ? 'yes' : 'no'}
+        onChange={(v) => toggle(v === 'yes')}
+        options={[
+          { value: 'no', label: 'No' },
+          { value: 'yes', label: 'Yes' },
+        ]}
+      />
+      {h && (
+        <div className="fa-rise grid gap-5 sm:grid-cols-3">
+          <div>
+            <NumberInput hideLabel={false} label="Likely value, before tax" value={h.base} format="money" min={0} max={LIMITS.assets.max} onChange={(base) => setH({ base })} />
+            <p className="mt-1 text-[12px] text-ink-3">We’ll model 50% and 150% of this as the conservative and optimistic cases.</p>
+          </div>
+          <div>
+            <NumberInput hideLabel={false} label="Age it might cash out" value={h.expectedAge} integer min={inputs.currentAge} max={inputs.planningHorizonAge} onChange={(expectedAge) => setH({ expectedAge })} />
+            <p className="mt-1 text-[12px] text-ink-3">We’ll test two years earlier through three years later.</p>
+          </div>
+          <div>
+            <NumberInput hideLabel={false} label="Tax when it pays out" value={h.taxRate} format="percent" min={0} max={0.6} onChange={(taxRate) => setH({ taxRate })} />
+            <p className="mt-1 text-[12px] text-ink-3">Your effective rate. Refine every detail later.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Reveal({ inputs, onBack, onFinish }: { inputs: PlanInputs; onBack: () => void; onFinish: () => void }) {
   const a = useMemo(() => analyzePlan(inputs), [inputs]);
+  const eq = useMemo(() => (inputs.equity.length ? analyzeEquity(inputs) : null), [inputs]);
   const m = a.metrics;
   const headline =
     a.workOptional == null
@@ -321,8 +392,14 @@ function Reveal({ inputs, onBack, onFinish }: { inputs: PlanInputs; onBack: () =
       <p className="text-[13px] font-medium text-accent">Your first projection</p>
       <h1 className="mt-3 text-[30px] font-semibold leading-[1.15] tracking-[-0.03em] text-ink sm:text-[38px]">{headline}</h1>
       <p className="mt-4 text-[14.5px] leading-relaxed text-ink-2">
-        Based on a single steady-return projection in today’s dollars. Next, you can explore the timeline, add consulting income or a liquidity event, and compare scenarios.
+        Based on a single steady-return projection in today’s dollars{eq ? ', assuming your equity pays its base case at the expected age' : ''}. Next, you can explore the timeline, add consulting income, and compare scenarios.
       </p>
+      {eq && (
+        <p className="mt-3 rounded-xl border border-line bg-surface-2/50 px-4 py-3 text-[13.5px] leading-relaxed text-ink-2">
+          Your equity moves this a lot: without any payout, work becomes optional at <strong className="text-ink">{eq.workOptionalWithout ?? 'no age in the plan'}</strong>; across all outcomes and timings, between{' '}
+          <strong className="text-ink">{eq.workOptionalBest ?? '—'}</strong> and <strong className="text-ink">{eq.workOptionalWorst ?? 'later than the plan runs'}</strong>.
+        </p>
+      )}
       <div className="mt-8 grid grid-cols-2 gap-3">
         <RevealStat label={`Projected portfolio at ${inputs.retirementAge}`} value={formatMoney(m.portfolioAtRetirement.real, { compact: true })} />
         <RevealStat label="Illustrative Freedom Target" value={formatMoney(m.freedomTarget.real, { compact: true })} sub={`${formatMoney(inputs.retirementSpending, { compact: true })} ÷ ${formatPct(inputs.withdrawal.targetRate)}`} />

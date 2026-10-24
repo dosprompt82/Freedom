@@ -116,17 +116,47 @@ export interface Property {
 }
 
 export type EquityCase = 'none' | 'conservative' | 'base' | 'optimistic';
+export type EquityTiming = 'expected' | 'earliest' | 'latest';
 
-export interface PrivateEquity {
-  enabled: boolean;
+export type EquityKind =
+  | 'private-company'
+  | 'rsu'
+  | 'options'
+  | 'carried-interest'
+  | 'business'
+  | 'other';
+
+/**
+ * Wealth that is real but not yet spendable: vested private company shares,
+ * unvested RSUs, options, carried interest, a stake in a business. It never
+ * counts as investable until it pays out, and its size, timing and very
+ * existence are uncertain, so it is modeled as a range rather than a number.
+ */
+export interface EquityHolding {
+  id: string;
   label: string;
-  age: number;
-  /** Net after-tax payouts. Fixed future dollars unless inflationAdjusted. */
+  kind: EquityKind;
+  /** Pre-tax proceeds in each case. Fixed future dollars unless inflationAdjusted. */
   conservative: Dollars;
   base: Dollars;
   optimistic: Dollars;
-  selectedCase: EquityCase;
+  /** Effective tax on the proceeds (0 when the amounts are already after tax). */
+  taxRate: Rate;
+  /** Chance that a liquidity event happens at all within the window (0–1). */
+  probability: Rate;
+  /** Most likely age at which proceeds start, and the plausible window around it. */
+  expectedAge: number;
+  earliestAge: number;
+  latestAge: number;
+  /** Proceeds arrive in equal parts over this many years (1 = lump sum). */
+  payoutYears: number;
   inflationAdjusted: boolean;
+}
+
+/** Which outcome the main projection assumes for every holding. */
+export interface EquityAssumption {
+  outcome: EquityCase;
+  timing: EquityTiming;
 }
 
 export interface MarketDownturn {
@@ -181,7 +211,8 @@ export interface PlanInputs {
   incomeStreams: IncomeStream[];
   events: OneTimeEvent[];
   properties: Property[];
-  privateEquity: PrivateEquity;
+  equity: EquityHolding[];
+  equityAssumption: EquityAssumption;
   downturn: MarketDownturn;
 }
 

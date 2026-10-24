@@ -42,6 +42,8 @@ interface Props {
   compact?: boolean;
   showTarget?: boolean;
   animate?: boolean;
+  /** Optional uncertainty band (e.g. the spread of equity outcomes), same dollars as `mode`. */
+  band?: { age: number; lo: number; hi: number }[];
 }
 
 type Row = {
@@ -63,13 +65,14 @@ function niceCeil(v: number): number {
 
 const axisMoney = (v: number) => formatMoney(v, { compact: true });
 
-export function FreedomChart({ analysis, mode, height = 380, overlays = [], compact, showTarget = true, animate = true }: Props) {
+export function FreedomChart({ analysis, mode, height = 380, overlays = [], compact, showTarget = true, animate = true, band = [] }: Props) {
   const reduced = useReducedMotion();
   const { projection, metrics, inputs } = analysis;
   const retAge = inputs.retirementAge;
 
   const data = useMemo<Row[]>(() => {
     const series = balanceSeries(projection, mode);
+    const bandMap = new Map(band.map((b) => [b.age, [b.lo, b.hi] as [number, number]]));
     const overlaySeries = overlays.map((o) => ({ id: o.id, pts: new Map(balanceSeries(o.projection, mode).map((p) => [p.age, p.value])) }));
     return series.map((p) => {
       const row: Row = {
@@ -84,9 +87,10 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
             : projection.freedomTargetReal * Math.pow(1 + inputs.inflation, p.age - inputs.currentAge),
       };
       for (const o of overlaySeries) row[`o_${o.id}`] = o.pts.get(p.age) ?? null;
+      (row as Record<string, unknown>).band = bandMap.get(p.age) ?? null;
       return row;
     });
-  }, [projection, mode, overlays, retAge, inputs.inflation, inputs.currentAge]);
+  }, [band, projection, mode, overlays, retAge, inputs.inflation, inputs.currentAge]);
 
   const phases = workPhaseWindows(inputs);
   const eventDots = projection.years
@@ -94,7 +98,10 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
     .map((y) => ({ age: y.age, value: mode === 'real' ? y.beginBalance / y.priceStart : y.beginBalance, labels: y.events.map((e) => e.label) }));
   const downturns = projection.years.filter((y) => y.events.some((e) => e.kind === 'downturn'));
 
+  const mainMax = Math.max(...data.map((d) => d.value), 1);
+  // Let the equity band widen the axis, but not so far that it flattens the main line.
   const maxY = Math.max(
+    ...band.map((b) => Math.min(b.hi, mainMax * 1.6)),
     ...data.map((d) => Math.max(d.value, showTarget && d.age <= retAge + 5 ? d.target : 0, ...overlays.map((o) => (d[`o_${o.id}`] as number) ?? 0))),
     1,
   );
@@ -151,6 +158,19 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
                 label={{ value: w.phase.label, position: 'insideBottom', fill: 'var(--ink-3)', fontSize: 11, offset: 10 }}
               />
             ))}
+
+          {band.length > 0 && (
+            <Area
+              dataKey="band"
+              stroke="none"
+              fill="var(--gold)"
+              fillOpacity={0.14}
+              isAnimationActive={false}
+              activeDot={false}
+              connectNulls
+              name="Range of equity outcomes"
+            />
+          )}
 
           {showTarget && (
             <Line
@@ -346,12 +366,14 @@ function TRow({
   );
 }
 
-export function ChartLegend({ items }: { items: { label: string; color: string; dashed?: boolean; dot?: boolean }[] }) {
+export function ChartLegend({ items }: { items: { label: string; color: string; dashed?: boolean; dot?: boolean; band?: boolean }[] }) {
   return (
     <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-ink-2">
       {items.map((i) => (
         <li key={i.label} className="flex items-center gap-1.5">
-          {i.dot ? (
+          {i.band ? (
+            <span className="inline-block h-2.5 w-4 rounded-sm" style={{ background: i.color, opacity: 0.3 }} />
+          ) : i.dot ? (
             <span className="inline-block h-2.5 w-2.5 rounded-full border-2" style={{ borderColor: i.color }} />
           ) : (
             <span

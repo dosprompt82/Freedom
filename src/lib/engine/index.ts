@@ -8,10 +8,14 @@ export * from './scenarios';
 export * from './validate';
 export * from './defaults';
 export * from './montecarlo';
+export * from './equity';
+export * from './equityAnalysis';
+export * from './migrate';
 
 import { computeMetrics, targetReachedAge, workOptionalAge } from './metrics';
 import { computeMilestones } from './milestones';
 import { planInsights } from './insights';
+import { analyzeEquity } from './equityAnalysis';
 import { projectPlan } from './projection';
 import { validateInputs } from './validate';
 import type { PlanInputs } from './types';
@@ -31,5 +35,6 @@ export type PlanAnalysis = ReturnType<typeof analyzePlan>;
 
 export function analyzeWithInsights(inputs: PlanInputs) {
   const a = analyzePlan(inputs);
-  return { ...a, insights: planInsights(inputs, a.projection, a.metrics, a) };
+  const equity = analyzeEquity(inputs);
+  return { ...a, equity, insights: planInsights(inputs, a.projection, a.metrics, { ...a, equity }) };
 }

@@ -7,8 +7,9 @@ import { ControlsPanel } from '@/components/plan/ControlsPanel';
 import { IssuesBanner, PageHeader, SampleBadge } from '@/components/plan/common';
 import { MilestoneList, YearTable } from '@/components/plan/Insights';
 import { MonteCarloPanel } from '@/components/plan/MonteCarloPanel';
+import { EquityAssumptionPicker } from '@/components/plan/Equity';
 import { Card, CardHeader, Segmented, Switch, cx } from '@/components/ui';
-import { projectPlan } from '@/lib/engine';
+import { equityBand, projectPlan } from '@/lib/engine';
 import { formatMoney } from '@/lib/format';
 import { useAnalysis } from '@/lib/hooks';
 import { SCENARIO_COLORS, useActivePlan, useStore } from '@/lib/store';
@@ -32,6 +33,7 @@ export default function TimelinePage() {
     [plan.scenarios, overlayIds],
   );
 
+  const band = useMemo(() => equityBand(analysis.inputs, mode), [analysis.inputs, mode]);
   const m = analysis.metrics;
   return (
     <div>
@@ -81,7 +83,7 @@ export default function TimelinePage() {
             <div className="px-2 pb-5 pt-4 sm:px-4">
               {view === 'chart' ? (
                 <>
-                  <FreedomChart analysis={analysis} mode={mode} height={440} overlays={overlays} showTarget={showTarget} />
+                  <FreedomChart analysis={analysis} mode={mode} height={440} overlays={overlays} showTarget={showTarget} band={band} />
                   <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3">
                     <ChartLegend
                       items={[
@@ -89,6 +91,7 @@ export default function TimelinePage() {
                         { label: 'Withdrawal phase', color: 'var(--chart-2)' },
                         ...(showTarget ? [{ label: 'Freedom Target', color: 'var(--gold)', dashed: true }] : []),
                         { label: 'One-time event', color: 'var(--gold)', dot: true },
+                        ...(band.length ? [{ label: 'Range of equity outcomes', color: 'var(--gold)', band: true }] : []),
                         ...overlays.map((o) => ({ label: o.name, color: o.color, dashed: true })),
                       ]}
                     />
@@ -104,6 +107,7 @@ export default function TimelinePage() {
               <div className="min-w-[220px]">
                 <Switch checked={showTarget} onChange={setShowTarget} label="Show Freedom Target" />
               </div>
+              {plan.inputs.equity.length > 0 && <EquityAssumptionPicker inputs={plan.inputs} onChange={updateInputs} />}
               {plan.scenarios.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[13px] text-ink-2">Overlay scenarios:</span>

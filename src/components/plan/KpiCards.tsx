@@ -1,11 +1,11 @@
 'use client';
 
-import type { DollarMode, PlanAnalysis } from '@/lib/engine';
+import type { DollarMode, EquityAnalysis, PlanAnalysis } from '@/lib/engine';
 import { formatMoney, formatPct } from '@/lib/format';
 import { GLOSSARY } from '@/lib/glossary';
 import { Badge, InfoTip, ToneIcon, cx } from '../ui';
 
-export function KpiCards({ analysis, mode }: { analysis: PlanAnalysis; mode: DollarMode }) {
+export function KpiCards({ analysis, mode, equity }: { analysis: PlanAnalysis; mode: DollarMode; equity?: EquityAnalysis }) {
   const { metrics: m, inputs, workOptional } = analysis;
   const unit = mode === 'real' ? "today's dollars" : 'future dollars';
   const gap = m.fundingGap[mode];
@@ -43,7 +43,12 @@ export function KpiCards({ analysis, mode }: { analysis: PlanAnalysis; mode: Dol
         label="Work-optional age"
         value={workOptional == null ? 'Not yet' : String(workOptional)}
         sub={
-          workOptional == null ? (
+          equity?.hasEquity && inputs.equityAssumption.outcome !== 'none' ? (
+            <span className="flex flex-wrap items-center gap-1.5">
+              <WoBadge delta={woDelta} />
+              <span>Without equity: {equity.workOptionalWithout ?? 'not reached'}</span>
+            </span>
+          ) : workOptional == null ? (
             `Not reached by ${inputs.planningHorizonAge} under these assumptions`
           ) : woDelta! > 0 ? (
             <Badge tone="positive">{woDelta} yr{woDelta === 1 ? '' : 's'} before your target</Badge>
@@ -58,6 +63,13 @@ export function KpiCards({ analysis, mode }: { analysis: PlanAnalysis; mode: Dol
       />
     </div>
   );
+}
+
+function WoBadge({ delta }: { delta: number | null }) {
+  if (delta == null) return <Badge tone="caution">Not reached</Badge>;
+  if (delta > 0) return <Badge tone="positive">{delta} yr{delta === 1 ? '' : 's'} early</Badge>;
+  if (delta === 0) return <Badge tone="neutral">On target</Badge>;
+  return <Badge tone="caution">{-delta} yr{delta === -1 ? '' : 's'} late</Badge>;
 }
 
 function Kpi({

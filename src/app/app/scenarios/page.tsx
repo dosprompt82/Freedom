@@ -7,12 +7,12 @@ import { ControlsPanel } from '@/components/plan/ControlsPanel';
 import { PageHeader, SampleBadge } from '@/components/plan/common';
 import {
   DownturnEditor,
-  EquityEditor,
   EventsEditor,
   RealEstateEditor,
   StrategyEditor,
   WorkPhasesEditor,
 } from '@/components/plan/Editors';
+import { EquityEditor } from '@/components/plan/Equity';
 import { InsightList } from '@/components/plan/Insights';
 import { Badge, Button, Card, CardHeader, Disclosure, TextInput, cx } from '@/components/ui';
 import {
@@ -159,6 +159,10 @@ function CompareTable({ compared, mode }: { compared: (Entry & { color: string; 
   const f = (n: number | undefined | null) => (n == null ? '—' : formatMoney(n, { compact: true }));
   const rows: { label: string; get: (a: PlanAnalysis) => React.ReactNode }[] = [
     { label: 'Full-time work ends', get: (a) => `Age ${a.inputs.retirementAge}` },
+    {
+      label: 'Equity assumed',
+      get: (a) => (a.inputs.equity.length ? (a.inputs.equityAssumption.outcome === 'none' ? 'No payout' : `${a.inputs.equityAssumption.outcome}, ${a.inputs.equityAssumption.timing}`) : '—'),
+    },
     { label: 'Portfolio at retirement', get: (a) => f(a.metrics.portfolioAtRetirement[mode]) },
     { label: 'Portfolio at 65', get: (a) => f(a.metrics.portfolioAt65?.[mode]) },
     { label: 'Portfolio at 80', get: (a) => f(a.metrics.portfolioAt80?.[mode]) },
@@ -313,7 +317,7 @@ function ScenarioEditor({ entry, onChange, onSelect }: { entry: Entry; onChange:
           <Disclosure title="Withdrawal strategy"><StrategyEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
           <Disclosure title="Work after full-time"><WorkPhasesEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
           <Disclosure title="One-time events"><EventsEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
-          <Disclosure title="Private equity liquidity"><EquityEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
+          <Disclosure title="Company equity"><EquityEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
           <Disclosure title="Real estate"><RealEstateEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
           <Disclosure title="Market downturn"><DownturnEditor inputs={entry.inputs} onChange={onChange} /></Disclosure>
         </div>

@@ -24,7 +24,7 @@ Requires Node 20+.
 | Route | Experience |
 | --- | --- |
 | `/` | Landing page with a live sample projection, pricing and FAQ |
-| `/start` | Seven-question guided onboarding (≈2 minutes) ending with a first projection |
+| `/start` | Eight-question guided onboarding (≈2 minutes), including illiquid equity, ending with a first projection |
 | `/app` | **My Financial Picture** — KPI cards, sliders + exact inputs, insights, and all editable details |
 | `/app/timeline` | **My Freedom Timeline** — main chart with phases, markers, events and per-year tooltips; milestones; income-vs-spending and withdrawal charts; year table; Monte Carlo (beta, Advanced mode) |
 | `/app/scenarios` | **What If? Scenario Lab** — create from templates, duplicate, rename, delete; compare up to three; computed tradeoffs |
@@ -61,7 +61,8 @@ See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) for formulas, timing convention
 - **Two distinct milestones.** *Freedom Target reached* = portfolio ≥ spending ÷ withdrawal-rate heuristic (3.5% default). *Work-optional age* = earliest age at which stopping **all** paid work funds fixed real spending through the horizon in the deterministic projection. The UI never presents either as a guarantee.
 - **No double counting of earnings.** While working full-time, the model uses *net annual savings*. Post-career work phases and other income apply only after full-time work ends.
 - **After-tax inputs.** Savings, phase income, events and equity payouts are net after tax. An optional effective tax rate grosses up withdrawals. Tax brackets and account rules are not modeled.
-- **Illiquid wealth stays illiquid.** Home equity and private company equity never count as investable until a modeled sale/payout.
+- **Illiquid wealth stays illiquid.** Home equity and company equity never count as investable until a modeled sale/payout.
+- **Equity is a range, not a number.** Holdings carry outcomes, a timing window, tax and probability; the app shows work-optional age for every combination, the minimum proceeds the plan needs, and concentration.
 - **Conservative timing.** Outflows at the start of the year, inflows at the end.
 - **Defaults:** 6% nominal return, 2.5% inflation, 3.5% target withdrawal rate, horizon age 95.
 - **Pricing:** the landing page presents a free tier and a $99/year "Freedom Plus" tier; all features are unlocked during early access (there is no payment integration).

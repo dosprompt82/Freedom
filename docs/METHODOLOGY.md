@@ -46,7 +46,7 @@ If outflows exceed the beginning balance, the balance goes to zero and the exces
 ## Events, equity, real estate
 
 - One-time events: positive amounts arrive at year end, negative amounts leave at year start; inflated if marked today's dollars.
-- Private equity: only the selected case (none / conservative / base / optimistic) enters, as a year-end inflow in the payout year.
+- Company equity (`equity.ts`, `equityAnalysis.ts`): each holding has pre-tax conservative/base/optimistic values, an effective tax rate, earliest/expected/latest payout ages, a probability of paying out, and a payout period. The main projection uses the plan-wide outcome and timing; net proceeds `value × (1 − tax)` arrive in equal year-end parts over the payout period. Analyses: a work-optional age for every outcome × timing plus no payout; the minimum after-tax proceeds (bisection over a scale of the base case at the expected age) for the plan as entered to last through the horizon; base-case share of net worth (investable + equity + home equity); probability-weighted value `p × (0.25·cons + 0.5·base + 0.25·opt)`; an uncertainty band of balances across all outcomes.
 - Property: value grows at its appreciation rate; mortgages amortize as `balance × (1 + rate) − payment`. A planned sale adds `value × (1 − selling costs) − remaining mortgage` (or the override) once. Equity is otherwise excluded from investable assets.
 
 ## Market downturn
@@ -62,7 +62,7 @@ Replaces the return in the downturn year with `−decline`, then `recoveryReturn
 
 ## Monte Carlo (beta)
 
-2,000 paths; annual nominal returns `exp(μ + σZ) − 1` with `σ² = ln(1 + v²/(1+m)²)` and `μ = ln(1+m) − σ²/2`, so the arithmetic mean equals the input return `m` and the standard deviation equals `v`. Inflation is held constant so real and nominal stay coherent. Mulberry32 PRNG with a fixed seed for reproducibility. Limitations: independent draws (no autocorrelation or regimes), thin lognormal tails, no inflation–return correlation, single asset class.
+2,000 paths; annual nominal returns `exp(μ + σZ) − 1` with `σ² = ln(1 + v²/(1+m)²)` and `μ = ln(1+m) − σ²/2`, so the arithmetic mean equals the input return `m` and the standard deviation equals `v`. Inflation is held constant so real and nominal stay coherent. Equity holdings are drawn per path: pays out with its probability; outcome 25/50/25 conservative/base/optimistic; age uniform over the window. Mulberry32 PRNG with a fixed seed for reproducibility. Limitations: independent draws (no autocorrelation or regimes), thin lognormal tails, no inflation–return correlation, single asset class.
 
 ## Not modeled
 

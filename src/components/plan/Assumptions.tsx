@@ -27,13 +27,16 @@ export function assumptionRows(inputs: PlanInputs): { label: string; value: stri
   for (const e of inputs.events) {
     rows.push({ label: e.label, value: `Age ${e.age}`, note: `${e.amount >= 0 ? '+' : '−'}${formatMoney(Math.abs(e.amount))} net${e.inflationAdjusted ? " (today's $)" : ' (future $)'}${e.taxNote ? ` · ${e.taxNote}` : ''}` });
   }
-  const pe = inputs.privateEquity;
-  if (pe.enabled) {
+  for (const h of inputs.equity) {
     rows.push({
-      label: pe.label,
-      value: pe.selectedCase === 'none' ? 'Excluded' : `${pe.selectedCase} case at age ${pe.age}`,
-      note: `Conservative ${formatMoney(pe.conservative, { compact: true })} · Base ${formatMoney(pe.base, { compact: true })} · Optimistic ${formatMoney(pe.optimistic, { compact: true })}`,
+      label: h.label,
+      value: `${formatMoney(h.conservative, { compact: true })} / ${formatMoney(h.base, { compact: true })} / ${formatMoney(h.optimistic, { compact: true })} pre-tax`,
+      note: `Conservative / base / optimistic · ${formatPct(h.taxRate, 0)} tax · ages ${h.earliestAge}–${h.latestAge} (expected ${h.expectedAge}) · ${formatPct(h.probability, 0)} chance${h.payoutYears > 1 ? ` · paid over ${h.payoutYears} years` : ''}`,
     });
+  }
+  if (inputs.equity.length) {
+    const a = inputs.equityAssumption;
+    rows.push({ label: 'Equity outcome used in plan', value: a.outcome === 'none' ? 'No payout' : `${a.outcome}, ${a.timing} timing` });
   }
   for (const p of inputs.properties) {
     rows.push({

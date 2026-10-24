@@ -1,4 +1,5 @@
 import type {
+  EquityHolding,
   IncomeStream,
   OneTimeEvent,
   PlanInputs,
@@ -45,16 +46,8 @@ export function defaultInputs(startYear = new Date().getFullYear()): PlanInputs 
     incomeStreams: [],
     events: [],
     properties: [],
-    privateEquity: {
-      enabled: false,
-      label: 'Equity liquidity event',
-      age: 48,
-      conservative: 500_000,
-      base: 1_200_000,
-      optimistic: 2_500_000,
-      selectedCase: 'none',
-      inflationAdjusted: false,
-    },
+    equity: [],
+    equityAssumption: { outcome: 'base', timing: 'expected' },
     downturn: {
       enabled: false,
       age: 52,
@@ -100,6 +93,25 @@ export function newEvent(partial: Partial<OneTimeEvent> = {}): OneTimeEvent {
     amount: -120_000,
     inflationAdjusted: true,
     taxNote: '',
+    ...partial,
+  };
+}
+
+export function newEquityHolding(partial: Partial<EquityHolding> = {}): EquityHolding {
+  return {
+    id: uid('equity'),
+    label: 'Company equity',
+    kind: 'private-company',
+    conservative: 1_000_000,
+    base: 2_000_000,
+    optimistic: 3_500_000,
+    taxRate: 0.25,
+    probability: 0.75,
+    expectedAge: 48,
+    earliestAge: 46,
+    latestAge: 52,
+    payoutYears: 1,
+    inflationAdjusted: false,
     ...partial,
   };
 }
@@ -181,15 +193,20 @@ export function samplePlanInputs(startYear = new Date().getFullYear()): PlanInpu
         sale: { enabled: true, age: 62, sellingCostRate: 0.06, netProceedsOverride: null },
       }),
     ],
-    privateEquity: {
-      ...base.privateEquity,
-      enabled: true,
-      label: 'Firm equity buyout',
-      age: 49,
-      conservative: 400_000,
-      base: 900_000,
-      optimistic: 1_800_000,
-      selectedCase: 'base',
-    },
+    equity: [
+      newEquityHolding({
+        id: 'sample_equity',
+        label: 'Firm equity buyout',
+        kind: 'private-company',
+        conservative: 600_000,
+        base: 1_200_000,
+        optimistic: 2_400_000,
+        taxRate: 0.25,
+        probability: 0.8,
+        expectedAge: 49,
+        earliestAge: 47,
+        latestAge: 53,
+      }),
+    ],
   };
 }

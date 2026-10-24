@@ -59,7 +59,12 @@ export function MethodologyContent({ compact = false }: { compact?: boolean }) {
 
       <H>Real estate and private equity</H>
       <P>
-        Home equity is never counted as spendable. A property affects the portfolio only when you model a sale (net proceeds after selling costs and the remaining mortgage, added once) or choose to pay its costs from the portfolio after full-time work. Mortgage payoff dates come from your balance, rate and payment. Private company equity is excluded until the year of the payout you select — conservative, base or optimistic — and enters as a net, after-tax amount.
+        Home equity is never counted as spendable. A property affects the portfolio only when you model a sale (net proceeds after selling costs and the remaining mortgage, added once) or choose to pay its costs from the portfolio after full-time work. Mortgage payoff dates come from your balance, rate and payment.
+      </P>
+
+      <H>Company equity</H>
+      <P>
+        Each holding has conservative, base and optimistic pre-tax values, an effective tax rate, an earliest, expected and latest payout age, a chance of paying out at all, and an optional number of years over which proceeds arrive. Nothing counts as investable until it pays out; proceeds then arrive after tax at year end. The main projection uses the outcome and timing you choose. Alongside it, the model computes the work-optional age for every outcome and timing (and for no payout), the minimum after-tax proceeds your plan needs to last through the horizon (found by searching payout sizes at the expected age), and the share of your net worth the base case represents. The probability-weighted value is chance × (25% conservative + 50% base + 25% optimistic); Monte Carlo draws each holding’s outcome and timing with the same weights.
       </P>
 
       <H>Stress tests and Monte Carlo</H>

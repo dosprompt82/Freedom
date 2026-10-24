@@ -2,7 +2,8 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { defaultInputs, samplePlanInputs, uid } from './engine/defaults';
+import { samplePlanInputs, uid } from './engine/defaults';
+import { normalizeInputs } from './engine/migrate';
 import { templateById } from './engine/scenarios';
 import type { DollarMode, PlanInputs } from './engine/types';
 
@@ -280,7 +281,20 @@ export const useStore = create<State>()(
     },
     {
       name: 'freedom-at-50',
-      version: 1,
+      version: 2,
+      // v1 → v2: the single privateEquity block became a list of equity holdings.
+      migrate: (persisted) => {
+        const st = persisted as { plans?: Plan[] };
+        return {
+          ...st,
+          plans: (st.plans ?? []).map((p) => ({
+            ...p,
+            inputs: normalizeInputs(p.inputs),
+            scenarios: p.scenarios.map((sc) => ({ ...sc, inputs: normalizeInputs(sc.inputs) })),
+            versions: p.versions.map((v) => ({ ...v, inputs: normalizeInputs(v.inputs), scenarios: v.scenarios.map((sc) => ({ ...sc, inputs: normalizeInputs(sc.inputs) })) })),
+          })),
+        } as unknown as State;
+      },
       storage: createJSONStorage(() => localStorage),
     },
   ),
@@ -303,19 +317,7 @@ export function parsePlanFile(text: string): Plan {
   if (!plan || typeof plan !== 'object' || !plan.inputs || typeof plan.inputs.currentAge !== 'number') {
     throw new Error('This does not look like a Freedom at 50 plan export.');
   }
-  const defaults = defaultInputs();
-  const inputs: PlanInputs = {
-    ...defaults,
-    ...plan.inputs,
-    assets: { ...defaults.assets, ...plan.inputs.assets },
-    withdrawal: { ...defaults.withdrawal, ...plan.inputs.withdrawal },
-    privateEquity: { ...defaults.privateEquity, ...plan.inputs.privateEquity },
-    downturn: { ...defaults.downturn, ...plan.inputs.downturn },
-    workPhases: plan.inputs.workPhases ?? [],
-    incomeStreams: plan.inputs.incomeStreams ?? [],
-    events: plan.inputs.events ?? [],
-    properties: plan.inputs.properties ?? [],
-  };
+  const inputs = normalizeInputs(plan.inputs);
   return {
     id: uid('plan'),
     name: plan.name || 'Imported plan',
@@ -323,9 +325,11 @@ export function parsePlanFile(text: string): Plan {
     updatedAt: now(),
     isSample: false,
     inputs,
-    scenarios: Array.isArray(plan.scenarios) ? plan.scenarios : [],
+    scenarios: Array.isArray(plan.scenarios) ? plan.scenarios.map((sc) => ({ ...sc, inputs: normalizeInputs(sc.inputs) })) : [],
     compare: Array.isArray(plan.compare) ? plan.compare.slice(0, MAX_COMPARE) : [BASE_ID],
-    versions: Array.isArray(plan.versions) ? plan.versions : [],
+    versions: Array.isArray(plan.versions)
+      ? plan.versions.map((v) => ({ ...v, inputs: normalizeInputs(v.inputs), scenarios: v.scenarios.map((sc) => ({ ...sc, inputs: normalizeInputs(sc.inputs) })) }))
+      : [],
   };
 }
 

@@ -37,14 +37,22 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     },
   },
   {
-    id: 'equity-payout',
-    name: 'Private equity payout',
-    description: 'Include the base-case liquidity event.',
-    apply: (b) => {
-      const n = clone(b);
-      n.privateEquity = { ...n.privateEquity, enabled: true, selectedCase: 'base' };
-      return n;
-    },
+    id: 'equity-none',
+    name: 'Equity never pays out',
+    description: 'Plan without any company equity proceeds.',
+    apply: (b) => ({ ...clone(b), equityAssumption: { ...b.equityAssumption, outcome: 'none' } }),
+  },
+  {
+    id: 'equity-late-conservative',
+    name: 'Equity pays less, later',
+    description: 'Conservative outcome at the latest plausible age.',
+    apply: (b) => ({ ...clone(b), equityAssumption: { outcome: 'conservative', timing: 'latest' } }),
+  },
+  {
+    id: 'equity-optimistic',
+    name: 'Equity upside',
+    description: 'Optimistic outcome at the expected age.',
+    apply: (b) => ({ ...clone(b), equityAssumption: { outcome: 'optimistic', timing: 'expected' } }),
   },
   {
     id: 'bigger-home',
