@@ -89,9 +89,9 @@ export default function MyPlanPage() {
             <div className="space-y-5 px-5 pb-6 pt-4 sm:px-6">
               <TextInput label="Plan name" value={plan.name} onChange={(n) => store.renamePlan(plan.id, n)} hideLabel={false} className="max-w-md" />
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Summary label="At retirement" value={formatMoney(analysis.metrics.portfolioAtRetirement.real, { compact: true })} />
-                <Summary label="Freedom Target" value={formatMoney(analysis.metrics.freedomTarget.real, { compact: true })} />
                 <Summary label="Work-optional" value={analysis.workOptional == null ? 'Not reached' : `Age ${analysis.workOptional}`} sub="Estimate" />
+                <Summary label="Planned retirement" value={`Age ${plan.inputs.retirementAge}`} sub="Full-time work ends" />
+                <Summary label="At retirement" value={formatMoney(analysis.metrics.portfolioAtRetirement.real, { compact: true })} />
                 <Summary label="Portfolio lasts" value={analysis.metrics.depletionAge == null ? `Through ${plan.inputs.planningHorizonAge}` : `To ${analysis.metrics.depletionAge}`} sub="Single projection" />
               </div>
               <div className="flex flex-wrap gap-2 border-t border-line pt-5">

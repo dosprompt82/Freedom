@@ -8,7 +8,7 @@ import { IssuesBanner, PageHeader, SampleBadge } from '@/components/plan/common'
 import { MilestoneList, YearTable } from '@/components/plan/Insights';
 import { MonteCarloPanel } from '@/components/plan/MonteCarloPanel';
 import { EquityAssumptionPicker } from '@/components/plan/Equity';
-import { Card, CardHeader, Segmented, Switch, cx } from '@/components/ui';
+import { Card, CardHeader, Segmented, cx } from '@/components/ui';
 import { equityBand, projectPlan } from '@/lib/engine';
 import { formatMoney } from '@/lib/format';
 import { useAnalysis } from '@/lib/hooks';
@@ -22,7 +22,6 @@ export default function TimelinePage() {
   const uiMode = useStore((s) => s.uiMode);
   const analysis = useAnalysis(plan.inputs);
   const [view, setView] = useState<'chart' | 'table'>('chart');
-  const [showTarget, setShowTarget] = useState(true);
   const [overlayIds, setOverlayIds] = useState<string[]>([]);
 
   const overlays = useMemo<Overlay[]>(
@@ -83,13 +82,13 @@ export default function TimelinePage() {
             <div className="px-2 pb-5 pt-4 sm:px-4">
               {view === 'chart' ? (
                 <>
-                  <FreedomChart analysis={analysis} mode={mode} height={440} overlays={overlays} showTarget={showTarget} band={band} />
+                  <FreedomChart analysis={analysis} mode={mode} height={440} overlays={overlays} band={band} />
                   <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3">
                     <ChartLegend
                       items={[
                         { label: 'Accumulation', color: 'var(--chart-1)' },
                         { label: 'Withdrawal phase', color: 'var(--chart-2)' },
-                        ...(showTarget ? [{ label: 'Freedom Target', color: 'var(--gold)', dashed: true }] : []),
+                        ...(analysis.workOptional != null && analysis.workOptional !== analysis.inputs.retirementAge ? [{ label: 'Work-optional age', color: 'var(--gold)' }] : []),
                         { label: 'One-time event', color: 'var(--gold)', dot: true },
                         ...(band.length ? [{ label: 'Range of equity outcomes', color: 'var(--gold)', band: true }] : []),
                         ...overlays.map((o) => ({ label: o.name, color: o.color, dashed: true })),
@@ -104,9 +103,6 @@ export default function TimelinePage() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-line px-5 py-4 sm:px-6">
-              <div className="min-w-[220px]">
-                <Switch checked={showTarget} onChange={setShowTarget} label="Show Freedom Target" />
-              </div>
               {plan.inputs.equity.length > 0 && <EquityAssumptionPicker inputs={plan.inputs} onChange={updateInputs} />}
               {plan.scenarios.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">

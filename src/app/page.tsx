@@ -69,8 +69,8 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex gap-6">
+              <HeroStat label="Planned retirement" value={`Age ${sample.inputs.retirementAge}`} />
               <HeroStat label="Portfolio at 50" value={formatMoney(sample.metrics.portfolioAtRetirement.real, { compact: true })} />
-              <HeroStat label="Freedom Target" value={formatMoney(sample.metrics.freedomTarget.real, { compact: true })} />
               <HeroStat label="End of plan" value={formatMoney(sample.metrics.portfolioAtHorizon.real, { compact: true })} />
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function LandingPage() {
           <Pillar
             n="01"
             title="See where you stand"
-            body="Answer eight short questions. Get a year-by-year projection of your investable assets, a Freedom Target, and the earliest age work could become optional."
+            body="Answer eight short questions. See the earliest age work could become optional, and a year-by-year projection of how your money gets you there."
           />
           <Pillar
             n="02"
@@ -167,7 +167,7 @@ export default function LandingPage() {
             <PriceCard
               name="Essentials"
               price="Free"
-              features={['Guided onboarding', 'Freedom Timeline and milestones', 'Freedom Target and work-optional age', 'One saved plan']}
+              features={['Guided onboarding', 'Freedom Timeline and milestones', 'Your work-optional age', 'One saved plan']}
               cta={<ButtonLink href="/start" size="md">Start free</ButtonLink>}
             />
             <PriceCard
@@ -188,7 +188,7 @@ export default function LandingPage() {
         <dl className="mt-8 divide-y divide-line">
           {[
             ['Is this financial advice?', 'No. Freedom at 50 is an educational planning tool. It shows the consequences of the assumptions you enter, and it cannot know what markets, taxes or your life will do.'],
-            ['What is the “work-optional age”?', 'The earliest age at which you could stop all paid work and still fund your planned spending through your planning horizon, in a single projection with steady returns. It is stricter than simply reaching a withdrawal-rate target — and still not a guarantee.'],
+            ['What is the “work-optional age”?', 'The earliest age at which you could stop all paid work and still fund your planned spending through your planning horizon, in a single projection with steady returns. It is an estimate, not a guarantee.'],
             ['Does it handle taxes?', 'Partly, by design. You enter after-tax savings, income and event amounts, and can set an effective tax rate on withdrawals. It does not compute tax brackets or account-specific rules.'],
             ['Where is my data stored?', 'Only in your browser’s local storage. Export a file to back it up or move it to another device.'],
           ].map(([q, a]) => (

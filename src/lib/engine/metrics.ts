@@ -24,16 +24,9 @@ export function depletionAge(projection: Projection): number | null {
 export function computeMetrics(projection: Projection): PlanMetrics {
   const { inputs, years } = projection;
   const ret = inputs.retirementAge;
-  const i = inputs.inflation;
 
   const atRetirement =
     ret > inputs.planningHorizonAge ? horizonPair(projection) : pair(projection, ret) ?? horizonPair(projection);
-  const yearsToRet = Math.max(0, ret - inputs.currentAge);
-  const targetReal = projection.freedomTargetReal;
-  const freedomTarget: MoneyPair = {
-    real: targetReal,
-    nominal: targetReal * growth(i, yearsToRet),
-  };
 
   const fullTimeYears = Math.max(
     0,
@@ -74,11 +67,6 @@ export function computeMetrics(projection: Projection): PlanMetrics {
     portfolioAt65: pair(projection, 65),
     portfolioAt80: pair(projection, 80),
     portfolioAtHorizon: horizonPair(projection),
-    freedomTarget,
-    fundingGap: {
-      real: atRetirement.real - freedomTarget.real,
-      nominal: atRetirement.nominal - freedomTarget.nominal,
-    },
     depletionAge: depletionAge(projection),
     fullTimeYears,
     transitionYears,
@@ -91,26 +79,6 @@ export function computeMetrics(projection: Projection): PlanMetrics {
     totalUnfundedReal,
     yearsWithLifestyleShortfall,
   };
-}
-
-/**
- * First age at which the household's portfolio, if it kept working and saving
- * as planned, would reach the Freedom Target (compared in today's dollars).
- * This is the withdrawal-rate heuristic only — not a test of sustainability.
- */
-export function targetReachedAge(inputs: PlanInputs): number | null {
-  const keepWorking = projectPlan(inputs, {
-    retirementAge: inputs.planningHorizonAge + 1,
-    excludeWorkPhases: true,
-  });
-  const target = keepWorking.freedomTargetReal;
-  if (!Number.isFinite(target)) return null;
-  for (const y of keepWorking.years) {
-    if (y.beginBalance / y.priceStart >= target) return y.age;
-  }
-  const last = keepWorking.years[keepWorking.years.length - 1];
-  if (last && last.endBalance / last.priceEnd >= target) return last.age + 1;
-  return null;
 }
 
 /**

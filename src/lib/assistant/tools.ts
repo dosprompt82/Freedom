@@ -26,7 +26,7 @@ export const ASSISTANT_TOOLS: AssistantToolSpec[] = [
   {
     name: 'what_if',
     description:
-      "Re-run the user's plan with some assumptions changed and return before/after results (work-optional age, Freedom Target age, portfolio at retirement and end of plan, depletion age, equity breakeven). All money in today's dollars. Pass only the fields that change.",
+      "Re-run the user's plan with some assumptions changed and return before/after results (work-optional age, portfolio at retirement and end of plan, depletion age, equity breakeven). All money in today's dollars. Pass only the fields that change.",
     input_schema: {
       type: 'object',
       additionalProperties: false,
@@ -146,8 +146,6 @@ function summary(inputs: PlanInputs) {
   return {
     retirementAge: inputs.retirementAge,
     workOptionalAge: a.workOptional,
-    freedomTargetReachedAge: a.targetAge,
-    freedomTarget: Math.round(a.metrics.freedomTarget.real),
     portfolioAtRetirement: Math.round(a.metrics.portfolioAtRetirement.real),
     portfolioAt65: a.metrics.portfolioAt65 ? Math.round(a.metrics.portfolioAt65.real) : null,
     portfolioAtEndOfPlan: Math.round(a.metrics.portfolioAtHorizon.real),

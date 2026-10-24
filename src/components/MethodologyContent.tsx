@@ -32,14 +32,9 @@ export function MethodologyContent({ compact = false }: { compact?: boolean }) {
         You enter savings, spending and income in today’s dollars. The model inflates each amount to the year it occurs and computes in nominal (future) dollars, then converts back for display. The real return uses the exact relationship <Code>(1 + nominal) ÷ (1 + inflation) − 1</Code>, not simple subtraction. Every screen labels which dollars it shows. In today’s-dollar views, the “investment return” line is the return after inflation.
       </P>
 
-      <H>Freedom Target</H>
-      <P>
-        An illustrative portfolio size: <Code>annual retirement spending ÷ withdrawal-rate assumption</Code> (3.5% by default, editable), plus any housing carrying costs you choose to pay on top of spending. Reaching it is a rule of thumb, not proof that a plan works, and no withdrawal rate is universally safe.
-      </P>
-
       <H>Work-optional age</H>
       <P>
-        A stricter test than the Freedom Target. The model tries each possible stopping age and finds the earliest at which you could stop <em>all</em> paid work — no consulting or part-time phases — spend your fixed real budget, and never run short through the planning horizon, using your return, inflation, income and event assumptions. It is a single steady-return path, so real-world outcomes will differ.
+        The app’s headline measure. The model tries each possible stopping age and finds the earliest at which you could stop <em>all</em> paid work — no consulting or part-time phases — spend your fixed real budget, and never run short through the planning horizon, using your return, inflation, income and event assumptions. It is a single steady-return path, so real-world outcomes will differ.
       </P>
 
       <H>Withdrawal strategies</H>

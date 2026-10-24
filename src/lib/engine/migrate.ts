@@ -53,5 +53,7 @@ export function normalizeInputs(raw: unknown): PlanInputs {
     inputs.equityAssumption = { outcome: legacy.selectedCase ?? 'base', timing: 'expected' };
   }
   delete (inputs as { privateEquity?: unknown }).privateEquity;
+  // The Freedom Target (and its withdrawal-rate heuristic) was removed in favor of the work-optional age.
+  delete (inputs.withdrawal as { targetRate?: unknown }).targetRate;
   return inputs;
 }

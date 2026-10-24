@@ -66,25 +66,6 @@ export function activePhases(
   });
 }
 
-/** Annual spending need used to size the Freedom Target, in today's dollars. */
-export function freedomTargetBasis(inputs: PlanInputs) {
-  const housing = inputs.properties
-    .filter((p) => p.costsSeparateFromSpending)
-    .filter((p) => !(p.sale.enabled && p.sale.age < inputs.retirementAge))
-    .reduce((sum, p) => sum + p.annualCarryingCosts, 0);
-  return {
-    spending: inputs.retirementSpending,
-    housing,
-    rate: inputs.withdrawal.targetRate,
-  };
-}
-
-export function freedomTargetReal(inputs: PlanInputs): number {
-  const b = freedomTargetBasis(inputs);
-  if (b.rate <= 0) return Infinity;
-  return (b.spending + b.housing) / b.rate;
-}
-
 /** Nominal return for period t under the plan's base + downturn assumptions. */
 export function scheduledReturn(inputs: PlanInputs, t: number): number {
   const age = inputs.currentAge + t;
@@ -319,8 +300,6 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
   return {
     inputs: { ...inputs, retirementAge },
     years,
-    freedomTargetReal: freedomTargetReal({ ...inputs, retirementAge }),
-    freedomTargetBasis: freedomTargetBasis({ ...inputs, retirementAge }),
   };
 }
 

@@ -107,7 +107,7 @@ export function EquityPanel({ inputs, onChange, analysis }: EditorProps & { anal
       <div className="mt-6">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[13.5px] font-semibold text-ink">Work-optional age by equity outcome</h3>
-          <span className="text-[12px] text-ink-3">Tap a cell to plan around it · your target is {ret}</span>
+          <span className="text-[12px] text-ink-3">Tap a cell to plan around it · you planned {ret}</span>
         </div>
         <div className="overflow-x-auto rounded-xl border border-line">
           <table className="tnum w-full min-w-[420px] text-[13px]">

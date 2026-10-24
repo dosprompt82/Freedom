@@ -89,7 +89,7 @@ export default function FinancialPicturePage() {
                   items={[
                     { label: 'Accumulation', color: 'var(--chart-1)' },
                     { label: 'Withdrawal phase', color: 'var(--chart-2)' },
-                    { label: 'Freedom Target', color: 'var(--gold)', dashed: true },
+                    ...(analysis.workOptional != null && analysis.workOptional !== analysis.inputs.retirementAge ? [{ label: 'Work-optional age', color: 'var(--gold)' }] : []),
                     { label: 'One-time event', color: 'var(--gold)', dot: true },
                     ...(band.length ? [{ label: 'Range of equity outcomes', color: 'var(--gold)', band: true }] : []),
                   ]}
@@ -113,7 +113,7 @@ export default function FinancialPicturePage() {
               <ControlsPanel inputs={inputs} onChange={updateInputs} dense={uiMode === 'simple'} />
               {uiMode === 'simple' && (
                 <button onClick={() => setUiMode('advanced')} className="mt-5 text-[12.5px] font-medium text-accent hover:underline">
-                  Show inflation, withdrawal rate and more →
+                  Show inflation →
                 </button>
               )}
             </div>
@@ -129,7 +129,7 @@ export default function FinancialPicturePage() {
         />
         <div className="mt-4 grid grid-cols-2 gap-5 border-y border-line px-5 py-4 sm:grid-cols-4 sm:px-6">
           <Stat label="Current age" value={inputs.currentAge} />
-          <Stat label="Target retirement age" value={inputs.retirementAge} />
+          <Stat label="Planned retirement age" value={inputs.retirementAge} />
           <Stat label="Investable assets" value={formatMoney(investableAssets(inputs.assets), { compact: true })} sub="Today" />
           <Stat label="Annual savings" value={formatMoney(inputs.annualSavings, { compact: true })} sub="Today's dollars" />
         </div>

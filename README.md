@@ -47,7 +47,7 @@ A chat panel ("Ask about your plan") answers questions about the active plan. It
 src/lib/engine/     Pure, deterministic financial model — no React
   types.ts          Typed inputs/outputs and conventions
   projection.ts     Year-by-year cash-flow model, display conversion (nominal/real)
-  metrics.ts        Plan metrics, Freedom Target age, work-optional search
+  metrics.ts        Plan metrics and the work-optional search
   milestones.ts     Milestones derived from projections
   insights.ts       Plain-English insights from re-running the model
   scenarios.ts      Scenario templates
@@ -65,13 +65,13 @@ See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) for formulas, timing convention
 
 ## Key product decisions and assumptions
 
-- **Two distinct milestones.** *Freedom Target reached* = portfolio ≥ spending ÷ withdrawal-rate heuristic (3.5% default). *Work-optional age* = earliest age at which stopping **all** paid work funds fixed real spending through the horizon in the deterministic projection. The UI never presents either as a guarantee.
+- **One headline measure.** *Work-optional age* = the earliest age at which stopping **all** paid work funds fixed real spending through the horizon in the deterministic projection. The app deliberately has no withdrawal-rate "target" number; the UI never presents the work-optional age as a guarantee.
 - **No double counting of earnings.** While working full-time, the model uses *net annual savings*. Post-career work phases and other income apply only after full-time work ends.
 - **After-tax inputs.** Savings, phase income, events and equity payouts are net after tax. An optional effective tax rate grosses up withdrawals. Tax brackets and account rules are not modeled.
 - **Illiquid wealth stays illiquid.** Home equity and company equity never count as investable until a modeled sale/payout.
 - **Equity is a range, not a number.** Holdings carry outcomes, a timing window, tax and probability; the app shows work-optional age for every combination, the minimum proceeds the plan needs, and concentration.
 - **Conservative timing.** Outflows at the start of the year, inflows at the end.
-- **Defaults:** 6% nominal return, 2.5% inflation, 3.5% target withdrawal rate, horizon age 95.
+- **Defaults:** 6% nominal return, 2.5% inflation, horizon age 95.
 - **Pricing:** the landing page presents a free tier and a $99/year "Freedom Plus" tier; all features are unlocked during early access (there is no payment integration).
 
 ## Disclaimer

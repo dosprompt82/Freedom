@@ -30,9 +30,8 @@ export function buildBriefing(inputs: PlanInputs): string {
   push();
 
   push('KEY RESULTS');
-  push(`Freedom Target (spending ÷ ${formatPct(inputs.withdrawal.targetRate)} heuristic): ${m(x.freedomTarget.real)}. First reached at age ${a.targetAge ?? 'not reached'} if the household kept working and saving.`);
   push(`Work-optional age (earliest age to stop ALL paid work and never run short through ${inputs.planningHorizonAge}, single steady-return projection): ${a.workOptional ?? 'not reached'}.`);
-  push(`Portfolio when full-time work ends (${inputs.retirementAge}): ${m(x.portfolioAtRetirement.real)} (${m(x.portfolioAtRetirement.nominal)} future dollars). Gap vs target: ${m(x.fundingGap.real)}.`);
+  push(`Portfolio when full-time work ends (${inputs.retirementAge}): ${m(x.portfolioAtRetirement.real)} (${m(x.portfolioAtRetirement.nominal)} future dollars).`);
   push(`Portfolio at 65: ${m(x.portfolioAt65?.real)}; at 80: ${m(x.portfolioAt80?.real)}; at end of plan: ${m(x.portfolioAtHorizon.real)}.`);
   push(`Plan as entered ${x.depletionAge == null ? `lasts through ${inputs.planningHorizonAge}` : `runs short at age ${x.depletionAge}`}. Initial withdrawal rate ${x.initialWithdrawalRate == null ? 'n/a' : formatPct(x.initialWithdrawalRate)}.`);
   push(`Years worked from now: ${x.fullTimeYears} full-time + ${x.transitionYears} transition.`);
@@ -121,7 +120,7 @@ export const ASSISTANT_INSTRUCTIONS = `You are the plan assistant inside Freedom
 How to answer:
 - Ground every number in the plan snapshot or in a tool result. Never invent or estimate figures yourself. For any "what if" (different retirement age, spending, returns, equity outcome or timing, consulting), call the what_if tool and quote its results. Use year_detail for a specific age.
 - Say which dollars you mean: the snapshot is in today's dollars.
-- Explain the app's terms when relevant: the Freedom Target is a withdrawal-rate rule of thumb; the work-optional age is the earliest age to stop all paid work and never run short in a single steady-return projection. Neither is a guarantee.
+- The app's headline measure is the work-optional age: the earliest age to stop all paid work and never run short in a single steady-return projection. It is not a guarantee. Frame answers around it (e.g. how a change moves it). The app does not use withdrawal-rate targets.
 - Be direct and brief: 2-6 short sentences or a few "- " bullets. Plain text, no headings, no tables.
 - You give educational explanations, not personalized investment, tax or legal advice. If asked for that, explain what the model shows and suggest a qualified professional for the decision.
 - If the plan lacks something the question depends on (e.g. Social Security isn't entered), say so and say where to add it in the app.`;

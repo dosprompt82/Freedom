@@ -409,15 +409,15 @@ function Reveal({ inputs, onBack, onFinish }: { inputs: PlanInputs; onBack: () =
         </p>
       )}
       <div className="mt-8 grid grid-cols-2 gap-3">
-        <RevealStat label={`Projected portfolio at ${inputs.retirementAge}`} value={formatMoney(m.portfolioAtRetirement.real, { compact: true })} />
-        <RevealStat label="Illustrative Freedom Target" value={formatMoney(m.freedomTarget.real, { compact: true })} sub={`${formatMoney(inputs.retirementSpending, { compact: true })} ÷ ${formatPct(inputs.withdrawal.targetRate)}`} />
         <RevealStat
-          label={m.fundingGap.real >= 0 ? 'Projected surplus' : 'Projected gap'}
-          value={formatMoney(Math.abs(m.fundingGap.real), { compact: true })}
-          tone={m.fundingGap.real >= 0 ? 'positive' : 'caution'}
+          label="Work-optional age"
+          value={a.workOptional == null ? 'Not yet' : String(a.workOptional)}
+          sub={a.workOptional == null ? undefined : `You planned ${inputs.retirementAge}`}
+          tone={a.workOptional != null && a.workOptional <= inputs.retirementAge ? 'positive' : 'caution'}
         />
+        <RevealStat label={`Projected portfolio at ${inputs.retirementAge}`} value={formatMoney(m.portfolioAtRetirement.real, { compact: true })} />
         <RevealStat
-          label="Portfolio lasts"
+          label="Stopping at your planned age"
           value={m.depletionAge == null ? `Through ${inputs.planningHorizonAge}` : `To age ${m.depletionAge}`}
           tone={m.depletionAge == null ? 'positive' : 'caution'}
         />

@@ -6,7 +6,6 @@ import {
   ComposedChart,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -107,7 +106,6 @@ export function WithdrawalChart({ projection, mode, height = 260 }: { projection
           <YAxis yAxisId="r" orientation="right" tickFormatter={(v) => formatPct(v, 0)} width={40} tickLine={false} axisLine={false} domain={[0, Math.min(1, Math.ceil(maxRate * 100) / 100)]} />
           <Bar yAxisId="m" dataKey="withdrawal" fill="var(--chart-2)" name="Withdrawal" radius={[2, 2, 0, 0]} isAnimationActive={!reduced} />
           <Line yAxisId="r" dataKey="rate" stroke="var(--chart-3)" strokeWidth={1.75} dot={false} name="Withdrawal rate" isAnimationActive={false} connectNulls={false} />
-          <ReferenceLine yAxisId="r" y={projection.inputs.withdrawal.targetRate} stroke="var(--gold)" strokeDasharray="4 4" />
           <Tooltip content={<SimpleTooltip unit={unit} />} cursor={{ fill: 'var(--surface-2)', opacity: 0.6 }} />
         </ComposedChart>
       </ResponsiveContainer>

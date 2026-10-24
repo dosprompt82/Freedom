@@ -40,7 +40,8 @@ interface Props {
   height?: number;
   overlays?: Overlay[];
   compact?: boolean;
-  showTarget?: boolean;
+  /** Mark the work-optional age on the chart. */
+  showWorkOptional?: boolean;
   animate?: boolean;
   /** Optional uncertainty band (e.g. the spread of equity outcomes), same dollars as `mode`. */
   band?: { age: number; lo: number; hi: number }[];
@@ -52,7 +53,6 @@ type Row = {
   acc: number | null;
   ret: number | null;
   value: number;
-  target: number;
   [k: string]: number | null;
 };
 
@@ -65,7 +65,7 @@ function niceCeil(v: number): number {
 
 const axisMoney = (v: number) => formatMoney(v, { compact: true });
 
-export function FreedomChart({ analysis, mode, height = 380, overlays = [], compact, showTarget = true, animate = true, band = [] }: Props) {
+export function FreedomChart({ analysis, mode, height = 380, overlays = [], compact, showWorkOptional = true, animate = true, band = [] }: Props) {
   const reduced = useReducedMotion();
   const { projection, metrics, inputs } = analysis;
   const retAge = inputs.retirementAge;
@@ -81,16 +81,12 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
         value: p.value,
         acc: p.age <= retAge ? p.value : null,
         ret: p.age >= retAge ? p.value : null,
-        target:
-          mode === 'real'
-            ? projection.freedomTargetReal
-            : projection.freedomTargetReal * Math.pow(1 + inputs.inflation, p.age - inputs.currentAge),
       };
       for (const o of overlaySeries) row[`o_${o.id}`] = o.pts.get(p.age) ?? null;
       (row as Record<string, unknown>).band = bandMap.get(p.age) ?? null;
       return row;
     });
-  }, [band, projection, mode, overlays, retAge, inputs.inflation, inputs.currentAge]);
+  }, [band, projection, mode, overlays, retAge]);
 
   const phases = workPhaseWindows(inputs);
   const eventDots = projection.years
@@ -102,7 +98,7 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
   // Let the equity band widen the axis, but not so far that it flattens the main line.
   const maxY = Math.max(
     ...band.map((b) => Math.min(b.hi, mainMax * 1.6)),
-    ...data.map((d) => Math.max(d.value, showTarget && d.age <= retAge + 5 ? d.target : 0, ...overlays.map((o) => (d[`o_${o.id}`] as number) ?? 0))),
+    ...data.map((d) => Math.max(d.value, ...overlays.map((o) => (d[`o_${o.id}`] as number) ?? 0))),
     1,
   );
   const lastAge = data[data.length - 1]?.age ?? inputs.planningHorizonAge;
@@ -172,18 +168,6 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
             />
           )}
 
-          {showTarget && (
-            <Line
-              dataKey="target"
-              stroke="var(--gold)"
-              strokeDasharray="4 4"
-              strokeWidth={1.25}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={false}
-              name="Freedom Target"
-            />
-          )}
 
           <Area
             type="monotone"
@@ -235,6 +219,14 @@ export function FreedomChart({ analysis, mode, height = 380, overlays = [], comp
               stroke="var(--ink-2)"
               strokeDasharray="2 3"
               label={compact ? undefined : { value: `Work ends · ${retAge}`, position: 'top', fill: 'var(--ink-2)', fontSize: 11 }}
+            />
+          )}
+          {showWorkOptional && analysis.workOptional != null && analysis.workOptional !== retAge && analysis.workOptional <= lastAge && (
+            <ReferenceLine
+              x={analysis.workOptional}
+              stroke="var(--gold)"
+              strokeWidth={1.5}
+              label={compact ? undefined : { value: `Work optional · ${analysis.workOptional}`, position: analysis.workOptional < retAge ? 'insideTopLeft' : 'insideTopRight', fill: 'var(--gold)', fontSize: 11 }}
             />
           )}
           {metrics.depletionAge != null && (

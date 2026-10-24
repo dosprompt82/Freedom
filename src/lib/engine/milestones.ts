@@ -1,12 +1,11 @@
-import { formatAge, formatMoney } from '../format';
-import { depletionAge, phaseSummaries, targetReachedAge, workOptionalAge, workPhaseWindows } from './metrics';
+import { formatMoney } from '../format';
+import { depletionAge, phaseSummaries, workOptionalAge, workPhaseWindows } from './metrics';
 import type { Milestone, PlanInputs, Projection } from './types';
 
 const yearOf = (inputs: PlanInputs, age: number) => inputs.startYear + (age - inputs.currentAge);
 
 export interface MilestoneContext {
   /** Pre-computed to avoid repeated searches; computed on demand when omitted. */
-  targetAge?: number | null;
   workOptional?: number | null;
 }
 
@@ -19,21 +18,6 @@ export function computeMilestones(projection: Projection, ctx: MilestoneContext 
     ...m,
     year: m.age == null ? null : yearOf(inputs, m.age),
   });
-
-  const target = ctx.targetAge !== undefined ? ctx.targetAge : targetReachedAge(inputs);
-  out.push(
-    mk({
-      id: 'target',
-      kind: 'target-reached',
-      label: 'Freedom Target reached',
-      age: target,
-      detail:
-        target == null
-          ? `At the current savings pace the portfolio does not reach the ${formatMoney(projection.freedomTargetReal, { compact: true })} target (today's dollars) by the end of the plan (age ${horizon}).`
-          : `If you kept saving as planned, the portfolio would first reach ${formatMoney(projection.freedomTargetReal, { compact: true })} (today's dollars) at ${formatAge(target)}. This is a withdrawal-rate heuristic, not a guarantee.`,
-      tone: target == null ? 'caution' : 'positive',
-    }),
-  );
 
   const wo = ctx.workOptional !== undefined ? ctx.workOptional : workOptionalAge(inputs);
   out.push(
@@ -57,7 +41,7 @@ export function computeMilestones(projection: Projection, ctx: MilestoneContext 
         kind: 'retirement',
         label: 'Full-time work ends',
         age: inputs.retirementAge,
-        detail: 'Your chosen target retirement age. Annual savings stop here.',
+        detail: 'Your planned retirement age. Annual savings stop here.',
         tone: 'neutral',
       }),
     );

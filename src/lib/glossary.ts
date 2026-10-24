@@ -16,10 +16,6 @@ export const GLOSSARY = {
     'Future amounts converted back to today’s purchasing power. $1M in 20 years at 2.5% inflation is about $610K in today’s dollars.',
   futureDollars:
     'Nominal amounts as they will actually appear on statements in that year, before adjusting for inflation.',
-  freedomTarget:
-    'An illustrative portfolio size: annual spending ÷ your withdrawal-rate assumption. At $150K and 3.5%, that is about $4.29M. It is a rule of thumb, not a guarantee.',
-  withdrawalRate:
-    'The share of your portfolio you plan to spend in the first year of retirement. 3.5% is a commonly used conservative illustration for long retirements; no rate is universally safe.',
   workOptional:
     'The earliest age at which you could stop all paid work and still fund your spending through your planning horizon — in a single projection with steady returns. Real markets are uneven, so treat it as a guide.',
   fixedReal:

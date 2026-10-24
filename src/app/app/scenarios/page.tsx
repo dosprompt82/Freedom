@@ -63,7 +63,7 @@ export default function ScenarioLabPage() {
   const insights = useMemo(() => {
     if (compared.length < 2) return [];
     const [base, ...rest] = compared;
-    const row = (c: (typeof compared)[number]) => ({ id: c.id, name: c.name, metrics: c.analysis.metrics, workOptional: c.analysis.workOptional, targetAge: c.analysis.targetAge });
+    const row = (c: (typeof compared)[number]) => ({ id: c.id, name: c.name, metrics: c.analysis.metrics, workOptional: c.analysis.workOptional });
     return rest.flatMap((c) => comparisonInsights(row(base), row(c)));
   }, [compared]);
 
@@ -158,6 +158,7 @@ export default function ScenarioLabPage() {
 function CompareTable({ compared, mode }: { compared: (Entry & { color: string; analysis: PlanAnalysis })[]; mode: DollarMode }) {
   const f = (n: number | undefined | null) => (n == null ? '—' : formatMoney(n, { compact: true }));
   const rows: { label: string; get: (a: PlanAnalysis) => React.ReactNode }[] = [
+    { label: 'Work-optional age', get: (a) => <strong className="font-semibold">{a.workOptional == null ? 'Not reached' : `Age ${a.workOptional}`}</strong> },
     { label: 'Full-time work ends', get: (a) => `Age ${a.inputs.retirementAge}` },
     {
       label: 'Equity assumed',
@@ -167,20 +168,11 @@ function CompareTable({ compared, mode }: { compared: (Entry & { color: string; 
     { label: 'Portfolio at 65', get: (a) => f(a.metrics.portfolioAt65?.[mode]) },
     { label: 'Portfolio at 80', get: (a) => f(a.metrics.portfolioAt80?.[mode]) },
     { label: `Portfolio at end of plan`, get: (a) => f(a.metrics.portfolioAtHorizon[mode]) },
-    { label: 'Freedom Target', get: (a) => f(a.metrics.freedomTarget[mode]) },
-    {
-      label: 'Funding gap / surplus',
-      get: (a) => {
-        const g = a.metrics.fundingGap[mode];
-        return <span className={g >= 0 ? 'text-accent' : 'text-caution'}>{g >= 0 ? '+' : '−'}{f(Math.abs(g))}</span>;
-      },
-    },
     { label: 'Total years worked', get: (a) => `${a.metrics.totalYearsWorked}${a.metrics.transitionYears ? ` (${a.metrics.transitionYears} part-time)` : ''}` },
     {
       label: 'Earned income from now (today’s $)',
       get: (a) => (a.metrics.totalEarnedIncomeReal == null ? <span className="text-ink-3" title="Add full-time take-home pay under Age and horizon">{f(a.metrics.transitionIncomeReal)}*</span> : f(a.metrics.totalEarnedIncomeReal)),
     },
-    { label: 'Work-optional age', get: (a) => (a.workOptional == null ? 'Not reached' : `Age ${a.workOptional}`) },
     {
       label: 'Portfolio depletion',
       get: (a) => (a.metrics.depletionAge == null ? <span className="text-accent">Lasts to {a.inputs.planningHorizonAge}</span> : <span className="text-negative">Age {a.metrics.depletionAge}</span>),

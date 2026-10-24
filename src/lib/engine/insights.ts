@@ -1,5 +1,5 @@
 import { formatMoney, formatPct } from '../format';
-import { computeMetrics, depletionAge, phaseSummaries, targetReachedAge, workOptionalAge } from './metrics';
+import { computeMetrics, depletionAge, phaseSummaries, workOptionalAge } from './metrics';
 import { projectPlan } from './projection';
 import type { EquityAnalysis } from './equityAnalysis';
 import { netProceeds } from './equity';
@@ -15,7 +15,6 @@ const money = (n: number) => formatMoney(n, { approx: true });
 const td = "today's dollars";
 
 export interface InsightContext {
-  targetAge: number | null;
   workOptional: number | null;
   equity?: EquityAnalysis;
 }
@@ -36,45 +35,23 @@ export function planInsights(
   const horizon = inputs.planningHorizonAge;
   const retiring = ret <= horizon;
 
-  // 1. Freedom Target timing.
-  if (ctx.targetAge != null) {
-    const delta = ret - ctx.targetAge;
+  // 1. Work-optional age vs the planned retirement age.
+  if (ctx.workOptional != null && retiring) {
+    const d = ret - ctx.workOptional;
     out.push({
-      id: 'target-age',
-      tone: delta >= 0 ? 'positive' : 'caution',
-      title: `Freedom Target reached at ${ctx.targetAge}`,
+      id: 'work-optional',
+      tone: d >= 0 ? 'positive' : 'caution',
+      title: `Work could become optional at ${ctx.workOptional}`,
       body:
-        `If you keep saving as planned, your projected portfolio reaches your illustrative Freedom Target of ${money(metrics.freedomTarget.real)} (${td}) at age ${ctx.targetAge}` +
-        (delta > 0
-          ? `, ${delta} year${delta === 1 ? '' : 's'} before your target retirement age.`
-          : delta < 0
-            ? `, ${-delta} year${delta === -1 ? '' : 's'} after your target retirement age of ${ret}.`
-            : ', the same year you plan to stop full-time work.'),
-    });
-  } else {
-    out.push({
-      id: 'target-age',
-      tone: 'caution',
-      title: 'Freedom Target not reached',
-      body: `At the current savings pace the projected portfolio does not reach ${money(metrics.freedomTarget.real)} (${td}) by the end of your plan (age ${horizon}).`,
+        d > 0
+          ? `Stopping all paid work at ${ctx.workOptional} would still fund your spending through ${horizon} in this projection — ${d} year${d === 1 ? '' : 's'} before you plan to stop at ${ret}. The extra years build a buffer against weaker markets.`
+          : d === 0
+            ? `Your planned age of ${ret} is the earliest age at which stopping all paid work funds your spending through ${horizon} in this projection, so there is little margin for weaker markets.`
+            : `Stopping all paid work at ${ret} would not fund your spending through ${horizon}. Without further earned income, the earliest sustainable age in this projection is ${ctx.workOptional}.`,
     });
   }
 
-  // 2. Gap at retirement.
-  if (retiring) {
-    const gap = metrics.fundingGap.real;
-    out.push({
-      id: 'gap',
-      tone: gap >= 0 ? 'positive' : 'caution',
-      title: gap >= 0 ? 'Projected surplus at retirement' : 'Projected gap at retirement',
-      body:
-        gap >= 0
-          ? `At ${ret}, your projected portfolio of ${money(metrics.portfolioAtRetirement.real)} exceeds the illustrative target by approximately ${money(gap)} (${td}).`
-          : `At ${ret}, your projected portfolio of ${money(metrics.portfolioAtRetirement.real)} is approximately ${money(-gap)} short of the illustrative target (${td}). A gap does not by itself mean the plan fails — see whether the portfolio lasts below.`,
-    });
-  }
-
-  // 3. Sustainability of the plan as entered.
+  // 2. Sustainability of the plan as entered.
   if (metrics.depletionAge != null) {
     out.push({
       id: 'depletion',
@@ -88,22 +65,6 @@ export function planInsights(
       tone: 'positive',
       title: `Portfolio lasts through ${horizon}`,
       body: `In this single projection your plan funds its spending through age ${horizon}, leaving about ${money(metrics.portfolioAtHorizon.real)} (${td}). This is not a guarantee: real returns arrive unevenly.`,
-    });
-  }
-
-  // 4. Work-optional age vs plan.
-  if (ctx.workOptional != null && retiring) {
-    const d = ret - ctx.workOptional;
-    out.push({
-      id: 'work-optional',
-      tone: d >= 0 ? 'positive' : 'caution',
-      title: `Work could become optional at ${ctx.workOptional}`,
-      body:
-        d > 0
-          ? `Stopping all paid work at ${ctx.workOptional} would still fund your spending through ${horizon} in this projection — ${d} year${d === 1 ? '' : 's'} earlier than your target. Extra years beyond that build a buffer against weaker markets.`
-          : d === 0
-            ? `Your target age of ${ret} is the earliest age at which stopping all paid work funds your spending through ${horizon} in this projection, so there is little margin for weaker markets.`
-            : `Stopping all paid work at ${ret} would not fund your spending through ${horizon}. Without further earned income, the earliest sustainable age in this projection is ${ctx.workOptional}.`,
     });
   }
 
@@ -221,24 +182,24 @@ export function planInsights(
     });
   }
 
-  // 6. Spending sensitivity.
+  // 6. Spending sensitivity, measured in work-optional years.
   const cut = 15_000;
-  if (inputs.retirementSpending > cut * 2 && inputs.withdrawal.targetRate > 0) {
-    const targetDelta = cut / inputs.withdrawal.targetRate;
-    const leaner = projectPlan({ ...inputs, retirementSpending: inputs.retirementSpending - cut });
-    const leanerDep = depletionAge(leaner);
-    let effect = '';
-    if (metrics.depletionAge != null && leanerDep == null) effect = ` It would also keep the portfolio from running short before ${horizon}.`;
-    else if (metrics.depletionAge != null && leanerDep != null && leanerDep > metrics.depletionAge)
-      effect = ` It would also push the projected shortfall from age ${metrics.depletionAge} to ${leanerDep}.`;
-    else if (leanerDep == null)
-      effect = ` It adds approximately ${money(horizonReal(leaner) - metrics.portfolioAtHorizon.real)} to your projected portfolio at the end of your plan (age ${horizon}).`;
-    out.push({
-      id: 'spending',
-      tone: 'neutral',
-      title: 'Spending is your most direct lever',
-      body: `Reducing annual retirement spending by ${formatMoney(cut)} lowers your illustrative Freedom Target by approximately ${money(targetDelta)} using a ${formatPct(inputs.withdrawal.targetRate)} withdrawal-rate assumption.${effect}`,
-    });
+  if (inputs.retirementSpending > cut * 2) {
+    const leanerInputs = { ...inputs, retirementSpending: inputs.retirementSpending - cut };
+    const leanerWo = workOptionalAge(leanerInputs);
+    const leanerDep = depletionAge(projectPlan(leanerInputs));
+    let body: string;
+    if (ctx.workOptional != null && leanerWo != null && leanerWo < ctx.workOptional) {
+      const yrs = ctx.workOptional - leanerWo;
+      body = `Spending ${formatMoney(cut)} less a year (${td}) would make work optional at ${leanerWo} instead of ${ctx.workOptional} — ${yrs} year${yrs === 1 ? '' : 's'} sooner.`;
+    } else if (ctx.workOptional == null && leanerWo != null) {
+      body = `Spending ${formatMoney(cut)} less a year (${td}) would make work optional at ${leanerWo}.`;
+    } else if (metrics.depletionAge != null && leanerDep == null) {
+      body = `Spending ${formatMoney(cut)} less a year (${td}) would keep the portfolio from running short before ${horizon}.`;
+    } else {
+      body = `Spending ${formatMoney(cut)} less a year (${td}) leaves the work-optional age unchanged but adds approximately ${money(horizonReal(projectPlan(leanerInputs)) - metrics.portfolioAtHorizon.real)} to your portfolio at the end of your plan.`;
+    }
+    out.push({ id: 'spending', tone: 'neutral', title: 'Spending is your most direct lever', body });
   }
 
   // 7. Transition work.
@@ -302,23 +263,12 @@ export function planInsights(
     });
   }
 
-  // 10. Initial withdrawal rate.
-  if (metrics.initialWithdrawalRate != null && metrics.initialWithdrawalRate > 0) {
-    const r = metrics.initialWithdrawalRate;
-    out.push({
-      id: 'withdrawal-rate',
-      tone: r > inputs.withdrawal.targetRate * 1.25 ? 'caution' : 'neutral',
-      title: `Initial withdrawal rate: ${formatPct(r)}`,
-      body: `In your first year after full-time work, the plan draws ${formatPct(r)} of the portfolio, compared with your ${formatPct(inputs.withdrawal.targetRate)} planning assumption. No withdrawal rate is universally safe.`,
-    });
-  }
-
   if (inputs.withdrawal.strategy === 'percentage' && metrics.yearsWithLifestyleShortfall > 0) {
     out.push({
       id: 'percentage',
       tone: 'caution',
       title: 'Percentage withdrawals vary',
-      body: `Withdrawing a fixed ${formatPct(inputs.withdrawal.percentageRate)} of the portfolio means income falls below your spending target in ${metrics.yearsWithLifestyleShortfall} of the modeled retirement years. The portfolio never fully depletes, but your lifestyle has to flex.`,
+      body: `Withdrawing a fixed ${formatPct(inputs.withdrawal.percentageRate)} of the portfolio means income falls below your planned spending in ${metrics.yearsWithLifestyleShortfall} of the modeled retirement years. The portfolio never fully depletes, but your lifestyle has to flex.`,
     });
   }
 
@@ -330,7 +280,6 @@ export interface ComparisonRow {
   name: string;
   metrics: PlanMetrics;
   workOptional: number | null;
-  targetAge: number | null;
 }
 
 /** Plain-English tradeoffs between a scenario and the baseline, from computed metrics. */
@@ -390,4 +339,4 @@ export function comparisonInsights(base: ComparisonRow, alt: ComparisonRow): Ins
   return out;
 }
 
-export { targetReachedAge, workOptionalAge };
+export { workOptionalAge };

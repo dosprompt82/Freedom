@@ -17,7 +17,6 @@ export function uid(prefix = 'id'): string {
 export const DEFAULTS = {
   nominalReturn: 0.06,
   inflation: 0.025,
-  targetRate: 0.035,
   percentageRate: 0.04,
   planningHorizonAge: 95,
 } as const;
@@ -37,7 +36,6 @@ export function defaultInputs(startYear = new Date().getFullYear()): PlanInputs 
     withdrawal: {
       strategy: 'fixed-real',
       percentageRate: DEFAULTS.percentageRate,
-      targetRate: DEFAULTS.targetRate,
       taxRate: 0,
     },
     nominalReturn: DEFAULTS.nominalReturn,

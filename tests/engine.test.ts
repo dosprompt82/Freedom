@@ -13,7 +13,6 @@ import {
   computeMilestones,
   defaultInputs,
   displayYear,
-  freedomTargetReal,
   futureValueEndOfYear,
   newEvent,
   newIncomeStream,
@@ -24,7 +23,6 @@ import {
   runMonteCarlo,
   samplePlanInputs,
   SCENARIO_TEMPLATES,
-  targetReachedAge,
   validateInputs,
   workOptionalAge,
   type PlanInputs,
@@ -315,6 +313,11 @@ describe('company equity', () => {
     expect(free!).toBeLessThanOrEqual(wo!);
   });
 
+  it('drops the retired Freedom Target setting from saved plans', () => {
+    const n = normalizeInputs({ ...plain(), withdrawal: { ...plain().withdrawal, targetRate: 0.035 } });
+    expect('targetRate' in n.withdrawal).toBe(false);
+  });
+
   it('migrates the version-1 single equity block', () => {
     const legacy = { ...plain(), equity: undefined, equityAssumption: undefined, privateEquity: { enabled: true, label: 'Old', age: 47, conservative: 1, base: 2, optimistic: 3, selectedCase: 'optimistic' } };
     const n = normalizeInputs(legacy);
@@ -356,14 +359,13 @@ describe('real estate', () => {
     );
     expect(separate.years.find((y) => y.age === 45)!.housingCosts).toBe(0);
     close(separate.years.find((y) => y.age === 50)!.withdrawal, 120_000, 1e-6);
-    close(freedomTargetReal(separate.inputs), 120_000 / 0.035, 1e-6);
   });
 
   it('computes the mortgage payoff milestone from the amortization', () => {
     const p = projectPlan(
       plain({ properties: [newProperty({ mortgageBalance: 100_000, mortgageRate: 0, annualMortgagePayment: 25_000 })] }),
     );
-    const m = computeMilestones(p, { targetAge: null, workOptional: null }).find((x) => x.kind === 'mortgage-payoff')!;
+    const m = computeMilestones(p, { workOptional: null }).find((x) => x.kind === 'mortgage-payoff')!;
     expect(m.age).toBe(44);
   });
 });
@@ -397,19 +399,10 @@ describe('presentation', () => {
   });
 });
 
-describe('targets and milestones', () => {
-  it('sizes the Freedom Target from spending and the withdrawal-rate assumption', () => {
-    const a = plain({ retirementSpending: 150_000 });
-    const b = plain({ retirementSpending: 135_000 });
-    close(freedomTargetReal(a) - freedomTargetReal(b), 15_000 / 0.035, 1e-6);
-    expect(Math.round(15_000 / 0.035)).toBe(428_571);
-  });
-
-  it('distinguishes reaching the target from a sustainable retirement', () => {
+describe('work-optional age and milestones', () => {
+  it('is the earliest age at which stopping all paid work never runs short', () => {
     const inputs = plain();
-    const target = targetReachedAge(inputs);
     const wo = workOptionalAge(inputs);
-    expect(target).not.toBeNull();
     expect(wo).not.toBeNull();
     // Stopping at the work-optional age lasts; one year earlier does not.
     expect(computeMetrics(projectPlan(inputs, { retirementAge: wo!, excludeWorkPhases: true })).depletionAge).toBeNull();
@@ -423,7 +416,6 @@ describe('targets and milestones', () => {
   it('reports milestones that cannot be established', () => {
     const broke = plain({ assets: { ...plain().assets, total: 0 }, annualSavings: 0 });
     const ms = computeMilestones(projectPlan(broke));
-    expect(ms.find((m) => m.kind === 'target-reached')!.age).toBeNull();
     expect(ms.find((m) => m.kind === 'work-optional')!.age).toBeNull();
     expect(ms.some((m) => m.kind === 'depletion')).toBe(true);
   });
@@ -435,7 +427,8 @@ describe('insights', () => {
     const a = analyzeWithInsights(inputs);
     const spend = a.insights.find((x) => x.id === 'spending')!;
     expect(spend.body).toContain('$15,000');
-    expect(spend.body).toContain('$430,000'); // 428,571 rounded for prose
+    const leaner = workOptionalAge({ ...inputs, retirementSpending: 135_000 });
+    expect(spend.body).toContain(`work optional at ${leaner} instead of ${a.workOptional}`);
     const delay = a.insights.find((x) => x.id === 'delay')!;
     const delayed = computeMetrics(projectPlan({ ...inputs, retirementAge: 52 }));
     const gain = delayed.portfolioAtRetirement.real - a.metrics.portfolioAtRetirement.real;

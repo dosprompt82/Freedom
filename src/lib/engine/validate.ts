@@ -11,7 +11,6 @@ export const LIMITS = {
   retirementSpending: { min: 0, max: 5_000_000 },
   nominalReturn: { min: -0.05, max: 0.15 },
   inflation: { min: -0.02, max: 0.12 },
-  targetRate: { min: 0.01, max: 0.1 },
   percentageRate: { min: 0.005, max: 0.15 },
   taxRate: { min: 0, max: 0.6 },
   savingsRealGrowth: { min: -0.1, max: 0.1 },
@@ -24,16 +23,13 @@ export function validateInputs(inputs: PlanInputs): ValidationIssue[] {
   const warn = (field: string, message: string) => issues.push({ field, severity: 'warning', message });
 
   if (inputs.retirementAge < inputs.currentAge) {
-    err('retirementAge', 'Target retirement age is earlier than your current age. The plan treats you as already retired.');
+    err('retirementAge', 'Planned retirement age is earlier than your current age. The plan treats you as already retired.');
   }
   if (inputs.planningHorizonAge <= inputs.currentAge) {
     err('planningHorizonAge', 'The planning horizon must be later than your current age.');
   }
   if (inputs.retirementAge > inputs.planningHorizonAge) {
     warn('retirementAge', 'Retirement is after the planning horizon, so no retirement years are modeled.');
-  }
-  if (inputs.withdrawal.targetRate <= 0) {
-    err('withdrawal.targetRate', 'The target withdrawal rate must be above zero.');
   }
   if (inputs.nominalReturn <= inputs.inflation) {
     warn('nominalReturn', 'Your return assumption does not beat inflation, so your portfolio loses purchasing power each year.');

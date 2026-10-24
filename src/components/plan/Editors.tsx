@@ -141,10 +141,9 @@ export function StrategyEditor({ inputs, onChange }: EditorProps) {
         {w.strategy === 'percentage' && (
           <NumberInput hideLabel={false} label="Annual withdrawal (% of portfolio)" value={w.percentageRate} format="percent" min={LIMITS.percentageRate.min} max={LIMITS.percentageRate.max} onChange={(v) => setW({ percentageRate: v })} />
         )}
-        <NumberInput hideLabel={false} label="Target withdrawal rate (for Freedom Target)" value={w.targetRate} format="percent" min={LIMITS.targetRate.min} max={LIMITS.targetRate.max} onChange={(v) => setW({ targetRate: v })} />
         <div>
           <NumberInput hideLabel={false} label="Effective tax rate on withdrawals" value={w.taxRate} format="percent" min={LIMITS.taxRate.min} max={LIMITS.taxRate.max} onChange={(v) => setW({ taxRate: v })} />
-          <p className="mt-1 text-[11.5px] text-ink-3">0% means your spending target already includes taxes.</p>
+          <p className="mt-1 text-[11.5px] text-ink-3">0% means your spending figure already includes taxes.</p>
         </div>
       </Grid>
     </div>
@@ -341,7 +340,7 @@ export function RealEstateEditor({ inputs, onChange }: EditorProps) {
                   label="Pay these costs on top of retirement spending"
                   description={
                     h.costsSeparateFromSpending
-                      ? 'After full-time work, mortgage payments and carrying costs are paid from the portfolio, and carrying costs are added to the Freedom Target.'
+                      ? 'After full-time work, mortgage payments and carrying costs are paid from the portfolio.'
                       : 'Costs are assumed to be inside your retirement spending target (avoids double counting).'
                   }
                 />

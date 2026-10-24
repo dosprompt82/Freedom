@@ -9,7 +9,7 @@ import { InfoTip, Segmented, SliderField } from '../ui';
 interface Props {
   inputs: PlanInputs;
   onChange: (fn: (p: PlanInputs) => PlanInputs) => void;
-  /** Show the full set (inflation, withdrawal rate) or only the essentials. */
+  /** Show the full set (inflation) or only the essentials. */
   dense?: boolean;
 }
 
@@ -53,7 +53,7 @@ export function ControlsPanel({ inputs, onChange, dense }: Props) {
     <div className="space-y-6">
       <SliderField
         label="Retirement age"
-        ariaLabel="Target retirement age"
+        ariaLabel="Planned retirement age"
         value={inputs.retirementAge}
         onChange={(v) => set('retirementAge', v)}
         min={minRet}
@@ -165,19 +165,6 @@ export function ControlsPanel({ inputs, onChange, dense }: Props) {
             hardMax={LIMITS.inflation.max}
             step={0.0025}
             format="percent"
-          />
-          <SliderField
-            label={<>Withdrawal-rate assumption <InfoTip term="Withdrawal rate">{GLOSSARY.withdrawalRate}</InfoTip></>}
-            ariaLabel="Initial withdrawal rate used for the Freedom Target"
-            value={inputs.withdrawal.targetRate}
-            onChange={(v) => onChange((p) => ({ ...p, withdrawal: { ...p.withdrawal, targetRate: v } }))}
-            min={0.025}
-            max={0.06}
-            hardMin={LIMITS.targetRate.min}
-            hardMax={LIMITS.targetRate.max}
-            step={0.0025}
-            format="percent"
-            hint="Sizes the Freedom Target only. It is not a safe-spending guarantee."
           />
         </>
       )}

@@ -13,8 +13,7 @@ export function assumptionRows(inputs: PlanInputs): { label: string; value: stri
       label: 'Withdrawal strategy',
       value: inputs.withdrawal.strategy === 'fixed-real' ? 'Fixed real spending' : `${formatPct(inputs.withdrawal.percentageRate)} of portfolio each year`,
     },
-    { label: 'Freedom Target withdrawal rate', value: formatPct(inputs.withdrawal.targetRate), note: 'Illustrative heuristic, not a safe rate' },
-    { label: 'Tax on withdrawals', value: inputs.withdrawal.taxRate ? formatPct(inputs.withdrawal.taxRate) : 'Not modeled', note: inputs.withdrawal.taxRate ? 'Effective rate' : 'Spending target assumed to include taxes' },
+    { label: 'Tax on withdrawals', value: inputs.withdrawal.taxRate ? formatPct(inputs.withdrawal.taxRate) : 'Not modeled', note: inputs.withdrawal.taxRate ? 'Effective rate' : 'Spending assumed to include taxes' },
     { label: 'Investment return', value: `${formatPct(inputs.nominalReturn, 2)} nominal`, note: `${formatPct(realReturn(inputs.nominalReturn, inputs.inflation), 2)} real` },
     { label: 'Inflation', value: formatPct(inputs.inflation, 2) },
   ];

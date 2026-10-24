@@ -187,8 +187,6 @@ export interface WithdrawalSettings {
   strategy: WithdrawalStrategy;
   /** Used by the 'percentage' strategy: share of the beginning balance withdrawn each year. */
   percentageRate: Rate;
-  /** Initial withdrawal-rate heuristic used to size the Freedom Target (default 3.5%). */
-  targetRate: Rate;
   /** Optional effective tax rate on portfolio withdrawals (0 = not modeled). */
   taxRate: Rate;
 }
@@ -287,10 +285,6 @@ export interface ProjectionYear {
 export interface Projection {
   inputs: PlanInputs;
   years: ProjectionYear[];
-  /** Freedom target in today's dollars (annual spending need / target withdrawal rate). */
-  freedomTargetReal: Dollars;
-  /** Inputs to the target, for transparent display. */
-  freedomTargetBasis: { spending: Dollars; housing: Dollars; rate: Rate };
 }
 
 export type DollarMode = 'real' | 'nominal';
@@ -305,9 +299,6 @@ export interface PlanMetrics {
   portfolioAt65: MoneyPair | null;
   portfolioAt80: MoneyPair | null;
   portfolioAtHorizon: MoneyPair;
-  freedomTarget: MoneyPair;
-  /** portfolioAtRetirement - freedomTarget (positive = surplus). */
-  fundingGap: MoneyPair;
   /** First age with spending or expenses the portfolio could not cover. */
   depletionAge: number | null;
   fullTimeYears: number;
@@ -326,7 +317,6 @@ export interface PlanMetrics {
 }
 
 export type MilestoneKind =
-  | 'target-reached'
   | 'work-optional'
   | 'retirement'
   | 'phase-start'

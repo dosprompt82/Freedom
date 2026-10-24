@@ -49,7 +49,7 @@ function Report() {
 
   const tradeoffs: Insight[] = useMemo(() => {
     if (compared.length < 2) return [];
-    const row = (c: (typeof compared)[number]) => ({ id: c.id, name: c.name, metrics: c.analysis.metrics, workOptional: c.analysis.workOptional, targetAge: c.analysis.targetAge });
+    const row = (c: (typeof compared)[number]) => ({ id: c.id, name: c.name, metrics: c.analysis.metrics, workOptional: c.analysis.workOptional });
     return compared.slice(1).flatMap((c) => comparisonInsights(row(compared[0]), row(c)));
   }, [compared]);
 
@@ -88,9 +88,9 @@ function Report() {
 
         <Section title="Executive summary">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Fig label={`Portfolio at ${inputs.retirementAge}`} value={formatMoney(m.portfolioAtRetirement.real, { compact: true })} />
-            <Fig label="Freedom Target" value={formatMoney(m.freedomTarget.real, { compact: true })} />
             <Fig label="Work-optional age" value={a.workOptional == null ? 'Not reached' : String(a.workOptional)} />
+            <Fig label="Planned retirement" value={`Age ${inputs.retirementAge}`} />
+            <Fig label={`Portfolio at ${inputs.retirementAge}`} value={formatMoney(m.portfolioAtRetirement.real, { compact: true })} />
             <Fig label="Portfolio lasts" value={m.depletionAge == null ? `Through ${inputs.planningHorizonAge}` : `To ${m.depletionAge}`} />
           </div>
           <ul className="mt-5 space-y-2">
@@ -129,7 +129,7 @@ function Report() {
                 items={[
                   { label: 'Accumulation', color: 'var(--chart-1)' },
                   { label: 'Withdrawal phase', color: 'var(--chart-2)' },
-                  { label: 'Freedom Target', color: 'var(--gold)', dashed: true },
+                  ...(a.workOptional != null && a.workOptional !== inputs.retirementAge ? [{ label: 'Work-optional age', color: 'var(--gold)' }] : []),
                 ]}
               />
             </div>

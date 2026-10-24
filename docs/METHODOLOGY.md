@@ -56,8 +56,6 @@ Replaces the return in the downturn year with `−decline`, then `recoveryReturn
 
 ## Derived measures
 
-- **Freedom Target** (today's $) = `(retirementSpending + separate carrying costs) / targetRate`. Nominal target at retirement = real × `(1+i)^(retirementAge − currentAge)`.
-- **Freedom Target reached** = first age at which a keep-working projection (no retirement, no work phases) reaches the target in today's dollars.
 - **Work-optional age** = smallest `R ≥ currentAge` such that retiring at `R` with fixed real spending, all work phases removed, has no unfunded year through the horizon.
 - **Insights** re-run the model with one change (retire 2 years later, spend $15,000 less, 25% decline in the first retirement year vs. ten years later, returns −1 pt, no work phases, no equity payout) and quote the computed differences, rounded to two significant figures.
 
