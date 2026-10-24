@@ -19,7 +19,8 @@ import { InsightList } from '@/components/plan/Insights';
 import { KpiCards } from '@/components/plan/KpiCards';
 import { Badge, Card, CardHeader, Disclosure, Stat } from '@/components/ui';
 import { equityBand, investableAssets } from '@/lib/engine';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { LifeEventsCard } from '@/components/plan/LifeEvents';
 import { formatMoney } from '@/lib/format';
 import { useAnalysis } from '@/lib/hooks';
 import { useActivePlan, useStore } from '@/lib/store';
@@ -32,6 +33,11 @@ export default function FinancialPicturePage() {
   const setUiMode = useStore((s) => s.setUiMode);
   const analysis = useAnalysis(plan.inputs);
   const { inputs } = plan;
+  const [openSection, setOpenSection] = useState<'income' | 'events' | 'home' | null>(null);
+  const openAndScroll = (section: 'income' | 'events' | 'home') => {
+    setOpenSection(section);
+    setTimeout(() => document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
   const band = useMemo(() => equityBand(analysis.inputs, mode), [analysis.inputs, mode]);
   const unit = mode === 'real' ? "today's dollars" : 'future dollars';
 
@@ -61,6 +67,8 @@ export default function FinancialPicturePage() {
           </div>
         )}
       </Card>
+
+      <LifeEventsCard inputs={inputs} onChange={updateInputs} onOpen={openAndScroll} />
 
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-5">
@@ -126,6 +134,15 @@ export default function FinancialPicturePage() {
           <Stat label="Annual savings" value={formatMoney(inputs.annualSavings, { compact: true })} sub="Today's dollars" />
         </div>
         <div>
+          <Disclosure id="section-income" open={openSection === 'income'} onOpenChange={(o) => setOpenSection(o ? 'income' : null)} title="Social Security, pensions and other income" subtitle="Income after full-time work ends" badge={inputs.incomeStreams.length ? <Badge>{inputs.incomeStreams.length}</Badge> : undefined}>
+            <IncomeStreamsEditor inputs={inputs} onChange={updateInputs} />
+          </Disclosure>
+          <Disclosure id="section-events" open={openSection === 'events'} onOpenChange={(o) => setOpenSection(o ? 'events' : null)} title="Big one-time costs and windfalls" subtitle="College, home purchases, inheritances, gifts" badge={inputs.events.length ? <Badge>{inputs.events.length}</Badge> : undefined}>
+            <EventsEditor inputs={inputs} onChange={updateInputs} />
+          </Disclosure>
+          <Disclosure id="section-home" open={openSection === 'home'} onOpenChange={(o) => setOpenSection(o ? 'home' : null)} title="Home and real estate" subtitle="Value, mortgage, carrying costs, planned sale" badge={inputs.properties.length ? <Badge>{inputs.properties.length}</Badge> : undefined}>
+            <RealEstateEditor inputs={inputs} onChange={updateInputs} />
+          </Disclosure>
           <Disclosure title="Age and horizon" subtitle="Current age, planning horizon, savings growth" defaultOpen={false}>
             <BasicsEditor inputs={inputs} onChange={updateInputs} />
           </Disclosure>
@@ -140,22 +157,13 @@ export default function FinancialPicturePage() {
               <Disclosure title="Work after full-time" subtitle="Consulting, part-time and other employment phases" badge={inputs.workPhases.length ? <Badge>{inputs.workPhases.length}</Badge> : undefined}>
                 <WorkPhasesEditor inputs={inputs} onChange={updateInputs} />
               </Disclosure>
-              <Disclosure title="Other income" subtitle="Pensions, Social Security, rental income" badge={inputs.incomeStreams.length ? <Badge>{inputs.incomeStreams.length}</Badge> : undefined}>
-                <IncomeStreamsEditor inputs={inputs} onChange={updateInputs} />
-              </Disclosure>
-              <Disclosure title="One-time events" subtitle="Windfalls, college, home purchases, gifts" badge={inputs.events.length ? <Badge>{inputs.events.length}</Badge> : undefined}>
-                <EventsEditor inputs={inputs} onChange={updateInputs} />
-              </Disclosure>
-              <Disclosure title="Real estate" subtitle="Value, mortgage, carrying costs, planned sale" badge={inputs.properties.length ? <Badge>{inputs.properties.length}</Badge> : undefined}>
-                <RealEstateEditor inputs={inputs} onChange={updateInputs} />
-              </Disclosure>
               <Disclosure title="Market downturn stress test" subtitle="A one-time decline at a chosen age" badge={inputs.downturn.enabled ? <Badge tone="caution">On</Badge> : undefined}>
                 <DownturnEditor inputs={inputs} onChange={updateInputs} />
               </Disclosure>
             </>
           ) : (
             <div className="border-t border-line px-5 py-4 text-[13px] text-ink-2 sm:px-6">
-              Multiple work phases, pensions, one-time events, real estate and stress tests live in{' '}
+              Multiple work phases, withdrawal strategy and market stress tests live in{' '}
               <button onClick={() => setUiMode('advanced')} className="font-medium text-accent hover:underline">
                 Advanced mode
               </button>

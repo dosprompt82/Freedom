@@ -586,22 +586,31 @@ export function Disclosure({
   children,
   defaultOpen = false,
   badge,
+  open: openProp,
+  onOpenChange,
+  id: anchorId,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   badge?: ReactNode;
+  /** Controlled open state (optional). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  id?: string;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [openState, setOpenState] = useState(defaultOpen);
+  const open = openProp ?? openState;
+  const setOpen = (v: boolean) => (onOpenChange ? onOpenChange(v) : setOpenState(v));
   const id = useId();
   return (
-    <div className="border-t border-line first:border-t-0">
+    <div id={anchorId} className="scroll-mt-20 border-t border-line first:border-t-0">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6"
       >
         <span className="min-w-0">
