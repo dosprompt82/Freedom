@@ -30,7 +30,7 @@ export function normalizeInputs(raw: unknown): PlanInputs {
     incomeStreams: r.incomeStreams ?? [],
     events: r.events ?? [],
     properties: r.properties ?? [],
-    equity: r.equity ?? [],
+    equity: (r.equity ?? []).map((h) => ({ ...h, requiresEmployment: !!h.requiresEmployment })),
     equityAssumption: { ...d.equityAssumption, ...r.equityAssumption },
   };
   const legacy = r.privateEquity;

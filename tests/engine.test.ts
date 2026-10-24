@@ -293,6 +293,28 @@ describe('company equity', () => {
     expect(a.workOptionalBest!).toBeLessThanOrEqual(a.workOptionalWithout ?? Infinity);
   });
 
+  it('forfeits payouts that require employment once full-time work has ended', () => {
+    const keep = withEq('base', 'expected', { requiresEmployment: true });
+    expect(projectPlan({ ...keep, retirementAge: 46 }).years[5].eventsIn).toBeCloseTo(1.5e6, 6);
+    const left = projectPlan({ ...keep, retirementAge: 45 });
+    expect(left.years[5].eventsIn).toBe(0);
+    expect(left.years[5].events.some((e) => e.kind === 'equity-forfeited')).toBe(true);
+    expect(breakevenEquity({ ...keep, retirementAge: 44 }).status).toBe('forfeited');
+    // Staged: only installments while still employed are kept.
+    const staged = projectPlan({ ...withEq('base', 'expected', { requiresEmployment: true, payoutYears: 3 }), retirementAge: 47 });
+    expect(staged.years.slice(5, 8).map((y) => Math.round(y.eventsIn))).toEqual([500_000, 500_000, 0]);
+  });
+
+  it('never times work-optional before a payout that needs employment, unless the plan works without it', () => {
+    const inputs = { ...withEq('base', 'expected', { requiresEmployment: true }), retirementAge: 60 };
+    const wo = workOptionalAge(inputs);
+    const without = workOptionalAge({ ...inputs, equityAssumption: { outcome: 'none', timing: 'expected' } });
+    expect(wo).not.toBeNull();
+    expect(wo! > 45 || wo === without).toBe(true);
+    const free = workOptionalAge({ ...inputs, equity: inputs.equity.map((h) => ({ ...h, requiresEmployment: false })) });
+    expect(free!).toBeLessThanOrEqual(wo!);
+  });
+
   it('migrates the version-1 single equity block', () => {
     const legacy = { ...plain(), equity: undefined, equityAssumption: undefined, privateEquity: { enabled: true, label: 'Old', age: 47, conservative: 1, base: 2, optimistic: 3, selectedCase: 'optimistic' } };
     const n = normalizeInputs(legacy);

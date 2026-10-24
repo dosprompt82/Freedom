@@ -35,7 +35,7 @@ export function assumptionRows(inputs: PlanInputs): { label: string; value: stri
     rows.push({
       label: h.label,
       value: `${formatMoney(h.conservative, { compact: true })} / ${formatMoney(h.base, { compact: true })} / ${formatMoney(h.optimistic, { compact: true })} pre-tax`,
-      note: `Conservative / base / optimistic · ${formatPct(h.taxRate, 0)} tax · ages ${h.earliestAge}–${h.latestAge} (expected ${h.expectedAge}) · ${formatPct(h.probability, 0)} chance${h.payoutYears > 1 ? ` · paid over ${h.payoutYears} years` : ''}`,
+      note: `Conservative / base / optimistic · ${formatPct(h.taxRate, 0)} tax · ages ${h.earliestAge}–${h.latestAge} (expected ${h.expectedAge}) · ${formatPct(h.probability, 0)} chance${h.payoutYears > 1 ? ` · paid over ${h.payoutYears} years` : ''}${h.requiresEmployment ? ' · must still be employed' : ''}`,
     });
   }
   if (inputs.equity.length) {

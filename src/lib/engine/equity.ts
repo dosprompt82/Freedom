@@ -10,6 +10,8 @@ export interface EquityPayout {
   /** Total net proceeds (after tax). Future dollars unless inflationAdjusted. */
   netTotal: number;
   inflationAdjusted: boolean;
+  /** Forfeited for any year in which full-time work has already ended. */
+  requiresEmployment: boolean;
 }
 
 export const OUTCOMES: Exclude<EquityCase, 'none'>[] = ['conservative', 'base', 'optimistic'];
@@ -50,6 +52,7 @@ export function equityPayouts(
       years: Math.max(1, Math.round(h.payoutYears)),
       netTotal: netProceeds(h, outcome) * scale,
       inflationAdjusted: h.inflationAdjusted,
+      requiresEmployment: !!h.requiresEmployment,
     }))
     .filter((p) => p.netTotal > 0);
 }
@@ -81,7 +84,7 @@ export function sampleEquityPayouts(inputs: PlanInputs, rand: () => number): Equ
     const age = lo + Math.floor(rand() * (hi - lo + 1));
     const netTotal = netProceeds(h, outcome);
     if (netTotal > 0) {
-      out.push({ holdingId: h.id, label: h.label, outcome, age, years: Math.max(1, Math.round(h.payoutYears)), netTotal, inflationAdjusted: h.inflationAdjusted });
+      out.push({ holdingId: h.id, label: h.label, outcome, age, years: Math.max(1, Math.round(h.payoutYears)), netTotal, inflationAdjusted: h.inflationAdjusted, requiresEmployment: !!h.requiresEmployment });
     }
   }
   return out;

@@ -168,11 +168,12 @@ export function EquityPanel({ inputs, onChange, analysis }: EditorProps & { anal
         </div>
         <p className="mt-2 text-[12px] text-ink-3">
           Each cell is the earliest age you could stop all paid work and still fund your spending through {inputs.planningHorizonAge}, in a steady-return projection.
+          {inputs.equity.some((h) => h.requiresEmployment) && ' Where equity requires you to stay employed, stopping before the payout forfeits it, so these ages never count on a payout you would have left behind.'}
         </p>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
-        <Callout tone={be.status === 'not-needed' ? 'positive' : be.status === 'needed' ? (analysis.net.conservative >= be.netAmount ? 'positive' : 'caution') : be.status === 'insufficient' ? 'negative' : 'neutral'}>
+        <Callout tone={be.status === 'not-needed' ? 'positive' : be.status === 'needed' ? (analysis.net.conservative >= be.netAmount ? 'positive' : 'caution') : be.status === 'insufficient' || be.status === 'forfeited' ? 'negative' : 'neutral'}>
           {be.status === 'not-needed' && <>Retiring at {ret}, your plan lasts through {inputs.planningHorizonAge} <strong>even if the equity never pays out</strong>.</>}
           {be.status === 'needed' && (
             <>
@@ -181,6 +182,11 @@ export function EquityPanel({ inputs, onChange, analysis }: EditorProps & { anal
             </>
           )}
           {be.status === 'insufficient' && <>Equity alone cannot fund retiring at {ret} with your planned spending.</>}
+          {be.status === 'forfeited' && (
+            <>
+              You plan to leave full-time work at {ret}, before your equity pays out at {be.byAge}, and it <strong>requires you to still be employed</strong>. It is forfeited in this plan. Retiring at {be.byAge + 1} or later keeps it.
+            </>
+          )}
         </Callout>
         <Callout tone={analysis.shareOfNetWorth >= 0.35 ? 'caution' : 'neutral'}>
           <span className="mb-1.5 block">
@@ -271,6 +277,18 @@ export function EquityEditor({ inputs, onChange }: EditorProps) {
                 <p className="tnum text-[12.5px] text-ink-2">
                   Base after tax: <strong className="text-ink">{formatMoney(netProceeds(h, 'base'))}</strong>
                 </p>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <Switch
+                  checked={h.requiresEmployment}
+                  onChange={(requiresEmployment) => update(h.id, { requiresEmployment })}
+                  label="I must still be employed to receive it"
+                  description={
+                    h.requiresEmployment
+                      ? `Leaving full-time work before a payout forfeits it. To keep all of it, work through age ${h.expectedAge + Math.max(1, h.payoutYears) - 1}.`
+                      : 'The payout arrives whether or not you still work there.'
+                  }
+                />
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
                 <Switch

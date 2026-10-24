@@ -157,6 +157,12 @@ export interface EquityHolding {
   /** Proceeds arrive in equal parts over this many years (1 = lump sum). */
   payoutYears: number;
   inflationAdjusted: boolean;
+  /**
+   * The household must still be working full-time when a payout arrives to
+   * receive it (common with unvested shares, retention-linked buyouts and
+   * repurchase rights). Leaving earlier forfeits it.
+   */
+  requiresEmployment: boolean;
 }
 
 /** Which outcome the main projection assumes for every holding. */
@@ -226,7 +232,7 @@ export type LifePhase = 'accumulation' | 'transition' | 'retirement';
 
 export interface YearEvent {
   label: string;
-  kind: 'event' | 'equity' | 'property-sale' | 'downturn';
+  kind: 'event' | 'equity' | 'equity-forfeited' | 'property-sale' | 'downturn';
   /** Nominal dollars. */
   amount: Dollars;
 }

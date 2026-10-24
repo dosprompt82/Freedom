@@ -113,6 +113,7 @@ export function newEquityHolding(partial: Partial<EquityHolding> = {}): EquityHo
     latestAge: 52,
     payoutYears: 1,
     inflationAdjusted: false,
+    requiresEmployment: false,
     ...partial,
   };
 }

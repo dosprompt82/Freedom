@@ -315,7 +315,19 @@ function ChartTooltip({
       {d.withdrawal > 0 && <TRow label="Withdrawals" value={`−${f(d.withdrawal)}`} />}
       {d.income > 0 && <TRow label="Income (not from portfolio)" value={f(d.income)} muted />}
       {d.events.map((e, idx) => (
-        <TRow key={idx} label={e.label} value={e.kind === 'downturn' ? `${Math.round(row.returnRate * 100)}% return` : `${e.amount >= 0 ? '+' : '−'}${f(Math.abs(e.amount))}`} accent />
+        <TRow
+          key={idx}
+          label={e.label}
+          value={
+            e.kind === 'downturn'
+              ? `${Math.round(row.returnRate * 100)}% return`
+              : e.kind === 'equity-forfeited'
+                ? `${f(e.amount)} lost`
+                : `${e.amount >= 0 ? '+' : '−'}${f(Math.abs(e.amount))}`
+          }
+          accent={e.kind !== 'equity-forfeited'}
+          negative={e.kind === 'equity-forfeited'}
+        />
       ))}
       {d.unfunded > 0 && <TRow label="Unfunded spending" value={f(d.unfunded)} negative />}
       <div className="my-1.5 border-t border-line" />

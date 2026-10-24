@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/Logo';
-import { Button, NumberInput, Segmented, cx, type NumberFormat } from '@/components/ui';
+import { Button, NumberInput, Segmented, Switch, cx, type NumberFormat } from '@/components/ui';
 import { analyzeEquity, analyzePlan, defaultInputs, LIMITS, newEquityHolding, realReturn, type PlanInputs } from '@/lib/engine';
 import { formatMoney, formatPct } from '@/lib/format';
 import { GLOSSARY } from '@/lib/glossary';
@@ -366,6 +366,14 @@ function EquityStep({ inputs, onChange }: { inputs: PlanInputs; onChange: (p: Pl
           <div>
             <NumberInput hideLabel={false} label="Age it might cash out" value={h.expectedAge} integer min={inputs.currentAge} max={inputs.planningHorizonAge} onChange={(expectedAge) => setH({ expectedAge })} />
             <p className="mt-1 text-[12px] text-ink-3">We’ll test two years earlier through three years later.</p>
+          </div>
+          <div className="sm:col-span-3">
+            <Switch
+              checked={h.requiresEmployment}
+              onChange={(requiresEmployment) => setH({ requiresEmployment })}
+              label="I must still be employed to receive it"
+              description="If you leave before it pays out, it’s forfeited. Common with unvested shares and retention-linked buyouts."
+            />
           </div>
           <div>
             <NumberInput hideLabel={false} label="Tax when it pays out" value={h.taxRate} format="percent" min={0} max={0.6} onChange={(taxRate) => setH({ taxRate })} />

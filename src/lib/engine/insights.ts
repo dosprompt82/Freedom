@@ -2,6 +2,7 @@ import { formatMoney, formatPct } from '../format';
 import { computeMetrics, depletionAge, phaseSummaries, targetReachedAge, workOptionalAge } from './metrics';
 import { projectPlan } from './projection';
 import type { EquityAnalysis } from './equityAnalysis';
+import { netProceeds } from './equity';
 import type { Insight, PlanInputs, PlanMetrics, Projection } from './types';
 
 /**
@@ -107,6 +108,87 @@ export function planInsights(
   }
 
   if (!retiring) return out;
+
+  // 11. Dependence on uncertain equity.
+  const eq = ctx.equity;
+  if (eq?.hasEquity) {
+    const be = eq.breakeven;
+    for (const h of inputs.equity.filter((x) => x.requiresEmployment)) {
+      const stayUntil = h.expectedAge + Math.max(1, h.payoutYears);
+      out.push(
+        ret > h.expectedAge
+          ? {
+              id: `stay-${h.id}`,
+              tone: ret >= stayUntil ? 'neutral' : 'caution',
+              title: `Staying employed for ${h.label.toLowerCase()}`,
+              body:
+                ret >= stayUntil
+                  ? `You need to still be employed when it pays out (expected at ${h.expectedAge}${h.payoutYears > 1 ? `, over ${h.payoutYears} years` : ''}). Leaving at ${ret} keeps all of it. If the payout slips past ${ret - 1}, it would be lost; the Late column in the equity grid shows that case.`
+                  : `Part of it pays out after you plan to leave at ${ret}, so those installments are lost. Working until ${stayUntil} would keep all of it.`,
+            }
+          : {
+              id: `stay-${h.id}`,
+              tone: 'negative',
+              title: `You would forfeit ${h.label.toLowerCase()}`,
+              body: `It requires you to still be employed at the payout (expected at ${h.expectedAge}), but full-time work ends at ${ret}. Staying through ${h.expectedAge} keeps ${money(netProceeds(h, 'base'))} after tax in the base case.`,
+            },
+      );
+    }
+    if (be.status === 'needed') {
+      const cons = eq.net.conservative;
+      out.push({
+        id: 'equity-breakeven',
+        tone: cons >= be.netAmount ? 'positive' : 'caution',
+        title: `Your plan needs ${money(be.netAmount)} from equity`,
+        body:
+          `To stop full-time work at ${ret} and keep spending as planned through ${horizon}, the plan needs at least ${money(be.netAmount)} after tax from your equity, arriving around age ${be.byAge}. ` +
+          (cons >= be.netAmount
+            ? `Even your conservative case (${money(cons)} after tax) covers that.`
+            : eq.net.base >= be.netAmount
+              ? `Your base case (${money(eq.net.base)}) covers it, but the conservative case (${money(cons)}) does not.`
+              : `Your base case (${money(eq.net.base)}) falls short, so the plan depends on the optimistic outcome.`),
+      });
+    } else if (be.status === 'not-needed') {
+      out.push({
+        id: 'equity-breakeven',
+        tone: 'positive',
+        title: 'Your plan works without the equity',
+        body: `Retiring at ${ret}, the portfolio lasts through ${horizon} even if the equity never pays out. The equity buys options rather than carrying the plan.`,
+      });
+    } else if (be.status === 'insufficient') {
+      out.push({
+        id: 'equity-breakeven',
+        tone: 'negative',
+        title: 'Equity alone cannot close the gap',
+        body: `Even ${money(be.netAmount)} of equity proceeds would not fund retiring at ${ret} with your planned spending. Spending, savings or retirement age need to move too.`,
+      });
+    }
+    if (eq.workOptionalBest != null || eq.workOptionalWithout != null) {
+      const without = eq.workOptionalWithout == null ? 'not within the plan' : `age ${eq.workOptionalWithout}`;
+      const range =
+        eq.workOptionalBest == null
+          ? 'work does not become optional in any equity outcome'
+          : eq.workOptionalWorst == null
+            ? `work could become optional as early as ${eq.workOptionalBest}, or not at all in the weakest outcomes`
+            : eq.workOptionalBest === eq.workOptionalWorst
+              ? `work becomes optional at ${eq.workOptionalBest} in every outcome`
+              : `work could become optional anywhere from age ${eq.workOptionalBest} to ${eq.workOptionalWorst}`;
+      out.push({
+        id: 'equity-range',
+        tone: 'neutral',
+        title: 'How much the equity moves your timeline',
+        body: `Across the conservative, base and optimistic outcomes and early or late timing, ${range}. Without any payout: ${without}.`,
+      });
+    }
+    if (eq.shareOfNetWorth >= 0.35) {
+      out.push({
+        id: 'equity-concentration',
+        tone: 'caution',
+        title: `${Math.round(eq.shareOfNetWorth * 100)}% of your net worth is one illiquid bet`,
+        body: 'Your base-case equity is a large share of what you own. Until it pays out, its value, timing and tax treatment can all change. Plan around the conservative case and treat the rest as upside.',
+      });
+    }
+  }
 
   // 7a. Consulting that covers spending: what it must earn, and what it lets the portfolio do.
   for (const ph of phaseSummaries(projection).filter((x) => x.coversSpending)) {
@@ -229,66 +311,6 @@ export function planInsights(
       title: `Initial withdrawal rate: ${formatPct(r)}`,
       body: `In your first year after full-time work, the plan draws ${formatPct(r)} of the portfolio, compared with your ${formatPct(inputs.withdrawal.targetRate)} planning assumption. No withdrawal rate is universally safe.`,
     });
-  }
-
-  // 11. Dependence on uncertain equity.
-  const eq = ctx.equity;
-  if (eq?.hasEquity) {
-    const be = eq.breakeven;
-    if (be.status === 'needed') {
-      const cons = eq.net.conservative;
-      out.push({
-        id: 'equity-breakeven',
-        tone: cons >= be.netAmount ? 'positive' : 'caution',
-        title: `Your plan needs ${money(be.netAmount)} from equity`,
-        body:
-          `To stop full-time work at ${ret} and keep spending as planned through ${horizon}, the plan needs at least ${money(be.netAmount)} after tax from your equity, arriving around age ${be.byAge}. ` +
-          (cons >= be.netAmount
-            ? `Even your conservative case (${money(cons)} after tax) covers that.`
-            : eq.net.base >= be.netAmount
-              ? `Your base case (${money(eq.net.base)}) covers it, but the conservative case (${money(cons)}) does not.`
-              : `Your base case (${money(eq.net.base)}) falls short, so the plan depends on the optimistic outcome.`),
-      });
-    } else if (be.status === 'not-needed') {
-      out.push({
-        id: 'equity-breakeven',
-        tone: 'positive',
-        title: 'Your plan works without the equity',
-        body: `Retiring at ${ret}, the portfolio lasts through ${horizon} even if the equity never pays out. The equity buys options rather than carrying the plan.`,
-      });
-    } else if (be.status === 'insufficient') {
-      out.push({
-        id: 'equity-breakeven',
-        tone: 'negative',
-        title: 'Equity alone cannot close the gap',
-        body: `Even ${money(be.netAmount)} of equity proceeds would not fund retiring at ${ret} with your planned spending. Spending, savings or retirement age need to move too.`,
-      });
-    }
-    if (eq.workOptionalBest != null || eq.workOptionalWithout != null) {
-      const without = eq.workOptionalWithout == null ? 'not within the plan' : `age ${eq.workOptionalWithout}`;
-      const range =
-        eq.workOptionalBest == null
-          ? 'work does not become optional in any equity outcome'
-          : eq.workOptionalWorst == null
-            ? `work could become optional as early as ${eq.workOptionalBest}, or not at all in the weakest outcomes`
-            : eq.workOptionalBest === eq.workOptionalWorst
-              ? `work becomes optional at ${eq.workOptionalBest} in every outcome`
-              : `work could become optional anywhere from age ${eq.workOptionalBest} to ${eq.workOptionalWorst}`;
-      out.push({
-        id: 'equity-range',
-        tone: 'neutral',
-        title: 'How much the equity moves your timeline',
-        body: `Across the conservative, base and optimistic outcomes and early or late timing, ${range}. Without any payout: ${without}.`,
-      });
-    }
-    if (eq.shareOfNetWorth >= 0.35) {
-      out.push({
-        id: 'equity-concentration',
-        tone: 'caution',
-        title: `${Math.round(eq.shareOfNetWorth * 100)}% of your net worth is one illiquid bet`,
-        body: 'Your base-case equity is a large share of what you own. Until it pays out, its value, timing and tax treatment can all change. Plan around the conservative case and treat the rest as upside.',
-      });
-    }
   }
 
   if (inputs.withdrawal.strategy === 'percentage' && metrics.yearsWithLifestyleShortfall > 0) {

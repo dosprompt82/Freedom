@@ -81,6 +81,12 @@ export function validateInputs(inputs: PlanInputs): ValidationIssue[] {
     if (!(h.earliestAge <= h.expectedAge && h.expectedAge <= h.latestAge)) {
       warn(f, `“${h.label}”: the expected age should fall between the earliest and latest ages.`);
     }
+    if (h.requiresEmployment && inputs.retirementAge <= h.expectedAge) {
+      warn(
+        f,
+        `“${h.label}” requires you to still be employed, but full-time work ends at ${inputs.retirementAge}, before its expected payout at ${h.expectedAge}. It is forfeited in this plan; work through age ${h.expectedAge} (retire at ${h.expectedAge + 1}) to keep it.`,
+      );
+    }
     if (h.latestAge > inputs.planningHorizonAge || h.earliestAge < inputs.currentAge) {
       warn(f, `“${h.label}”: part of the payout window falls outside the plan and may be ignored.`);
     }

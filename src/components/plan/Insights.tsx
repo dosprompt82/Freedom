@@ -88,7 +88,7 @@ export function YearTable({ projection, mode }: { projection: Projection; mode: 
         <tbody>
           {projection.years.map((y) => {
             const d = displayYear(y, mode);
-            const ev = d.events.filter((e) => e.kind !== 'downturn').reduce((s, e) => s + e.amount, 0);
+            const ev = d.events.filter((e) => e.kind !== 'downturn' && e.kind !== 'equity-forfeited').reduce((s, e) => s + e.amount, 0);
             return (
               <tr
                 key={y.age}

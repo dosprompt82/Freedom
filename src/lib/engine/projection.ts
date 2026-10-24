@@ -176,8 +176,13 @@ export function projectPlan(inputs: PlanInputs, options: ProjectionOptions = {})
       if (age < pay.age || age >= pay.age + pay.years) continue;
       const part = pay.netTotal / pay.years;
       const amt = pay.inflationAdjusted ? part * priceEnd : part;
-      eventsIn += amt;
       const staged = pay.years > 1 ? ` · ${age - pay.age + 1} of ${pay.years}` : '';
+      if (pay.requiresEmployment && !working) {
+        // Full-time work has ended before this payout, so it is lost.
+        events.push({ label: `${pay.label} forfeited (left before payout${staged})`, kind: 'equity-forfeited', amount: amt });
+        continue;
+      }
+      eventsIn += amt;
       events.push({ label: `${pay.label} (${pay.outcome}${staged})`, kind: 'equity', amount: amt });
     }
 

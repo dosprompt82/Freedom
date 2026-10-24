@@ -106,6 +106,17 @@ export function computeMilestones(projection: Projection, ctx: MilestoneContext 
             tone: 'positive',
           }),
         );
+      } else if (ev.kind === 'equity-forfeited') {
+        out.push(
+          mk({
+            id: `forfeit-${y.age}-${ev.label}`,
+            kind: 'equity',
+            label: ev.label,
+            age: y.age,
+            detail: `${formatMoney(ev.amount / y.priceEnd, { compact: true })} after tax (today's dollars) is lost because full-time work ends before this payout.`,
+            tone: 'negative',
+          }),
+        );
       } else if (ev.kind === 'property-sale') {
         out.push(
           mk({

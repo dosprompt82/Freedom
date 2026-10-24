@@ -17,6 +17,7 @@ export interface EquityOutcomeCell {
 
 export type Breakeven =
   | { status: 'none' }
+  | { status: 'forfeited'; byAge: number }
   | { status: 'not-needed' }
   | { status: 'needed'; netAmount: number; byAge: number }
   | { status: 'insufficient'; netAmount: number; byAge: number };
@@ -65,6 +66,10 @@ export function breakevenEquity(inputs: PlanInputs): Breakeven {
   const baseNet = totalNet(inputs, 'base');
   if (!inputs.equity.length || baseNet <= 0) return { status: 'none' };
   const byAge = Math.min(...inputs.equity.map((h) => h.expectedAge));
+  // Every payout needs continued employment and the plan leaves first: nothing to size.
+  if (inputs.equity.every((h) => h.requiresEmployment && h.expectedAge >= inputs.retirementAge)) {
+    return { status: 'forfeited', byAge };
+  }
   const funded = (scale: number) =>
     depletionAge(
       projectPlan(inputs, {
